@@ -17,7 +17,9 @@ import {
   History,
   BarChart3,
   BellRing,
+  ArrowLeftRight,
 } from "lucide-react";
+
 
 interface NavItem {
   id: string;
@@ -52,14 +54,16 @@ const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
-    heading: "Management",
+    heading: "Management & Sync",
     items: [
+      { id: "sync", label: "Bi-Directional Sync", icon: ArrowLeftRight },
       { id: "history", label: "Meeting History", icon: History },
       { id: "analytics", label: "Analytics", icon: BarChart3 },
       { id: "digests", label: "Task Digests", icon: BellRing },
       { id: "settings", label: "Settings", icon: Settings },
     ],
   },
+
 ];
 
 

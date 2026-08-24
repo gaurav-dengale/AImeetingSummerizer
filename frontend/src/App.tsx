@@ -16,6 +16,8 @@ import TaskReviewPanel from "./components/TaskReviewPanel";
 import MeetingHistoryPage from "./components/MeetingHistoryPage";
 import AnalyticsDashboard from "./components/AnalyticsDashboard";
 import DigestSettingsCard from "./components/DigestSettingsCard";
+import BiDirectionalSyncCard from "./components/BiDirectionalSyncCard";
+
 import { api, type AiResult, type Segment, type StatusResponse, type TranscriptResponse } from "./lib/api";
 import { staggerContainer, tileIn } from "./lib/variants";
 
@@ -226,8 +228,14 @@ export default function App() {
             <DigestSettingsCard />
           </motion.div>
 
+          {/* Bi-Directional Task Sync (#7) */}
+          <motion.section id="sync" variants={tileIn} className="col-span-12 scroll-mt-24">
+            <BiDirectionalSyncCard onTaskUpdated={refreshStatus} />
+          </motion.section>
+
           {/* Persistent Meeting History (#1) */}
           <motion.section id="history" variants={tileIn} className="col-span-12 scroll-mt-24">
+
             <MeetingHistoryPage />
           </motion.section>
 

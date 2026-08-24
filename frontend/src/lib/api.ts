@@ -256,5 +256,27 @@ export const api = {
 
   // ── Recurring Digest (#6) ──
   triggerDigest: () => request<{ success: boolean; message: string }>("/api/digest/trigger", { method: "POST" }),
+
+  // ── Bi-Directional Task Sync (#7) ──
+  simulateBiDirectionalSync: (data: {
+    taskId?: number;
+    channel?: string;
+    responseText?: string;
+    reaction?: string;
+  }) =>
+    request<{
+      success: boolean;
+      action?: string;
+      task_id?: number;
+      task?: string;
+      new_due_date?: string;
+      message?: string;
+      trigger?: string;
+      source?: string;
+    }>("/api/webhooks/simulate", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
 };
+
 
