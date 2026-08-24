@@ -86,10 +86,12 @@ def call_gemini(prompt):
 
 def call_groq_with_backoff(client, prompt, max_retries=3):
     models_to_try = [
-        "llama-3.3-70b-versatile",
-        "llama-3.1-8b-instant",
-        "mixtral-8x7b-32768"
+        "openai/gpt-oss-120b",
+        "openai/gpt-oss-20b",
+        "qwen/qwen3.6-27b",
+        "groq/compound"
     ]
+
     delay = 1.5
     for attempt in range(max_retries):
         for model in models_to_try:
