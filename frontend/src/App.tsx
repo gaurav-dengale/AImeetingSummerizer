@@ -22,8 +22,24 @@ import { staggerContainer, tileIn } from "./lib/variants";
 export default function App() {
   const [status, setStatus] = useState<StatusResponse | null>(null);
   const [statusError, setStatusError] = useState(false);
-  const [segments, setSegments] = useState<Segment[]>([]);
-  const [aiResult, setAiResult] = useState<AiResult | null>(null);
+  const [segments, setSegments] = useState<Segment[]>(() => {
+    try {
+      const saved = localStorage.getItem("meetingai_last_segments");
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const [aiResult, setAiResult] = useState<AiResult | null>(() => {
+    try {
+      const saved = localStorage.getItem("meetingai_last_ai_result");
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
+
   const [pendingReviewCount, setPendingReviewCount] = useState(0);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
@@ -44,6 +60,60 @@ export default function App() {
     }
   }, []);
 
+  // Auto-restore latest meeting from database if local state is empty
+  useEffect(() => {
+    async function loadLatestMeeting() {
+      try {
+        const list = await api.listMeetings();
+        if (list && list.length > 0) {
+          const latestId = list[0].id;
+          const detail = await api.getMeeting(latestId);
+          if (detail && detail.raw_transcript) {
+            const rawText = detail.raw_transcript;
+            setSegments((prev) => {
+              if (prev.length > 0) return prev;
+              const restored: Segment[] = [{ speaker: "Meeting Audio", text: rawText }];
+              try {
+                localStorage.setItem("meetingai_last_segments", JSON.stringify(restored));
+              } catch {}
+              return restored;
+            });
+          }
+
+          if (detail && detail.tasks) {
+            setAiResult((prev) => {
+              if (prev) return prev;
+              const bullets = detail.summary_bullets && detail.summary_bullets.length > 0
+                ? detail.summary_bullets
+                : detail.summary ? [detail.summary] : [];
+              const restoredAi: AiResult = {
+                summary: detail.summary || "",
+                summary_bullets: bullets,
+                tasks: detail.tasks.map((t) => ({
+                  assignee: t.assignee || "",
+                  task: t.task || "",
+                  due_date: t.due_date || "",
+                  confidence: t.confidence || 80,
+                  priority: t.priority || "medium",
+                })),
+
+                total_segments: 1,
+                total_tasks: detail.tasks.length,
+              };
+              try {
+                localStorage.setItem("meetingai_last_ai_result", JSON.stringify(restoredAi));
+              } catch {}
+              return restoredAi;
+            });
+          }
+        }
+      } catch {
+        // Ignored
+      }
+    }
+    loadLatestMeeting();
+  }, []);
+
   useEffect(() => {
     refreshStatus();
     const id = window.setInterval(refreshStatus, 15000);
@@ -62,9 +132,19 @@ export default function App() {
   }, []);
 
   function applyResult(data: TranscriptResponse) {
-    if (data.transcript?.segments) setSegments(data.transcript.segments);
+    if (data.transcript?.segments) {
+      setSegments(data.transcript.segments);
+      try {
+        localStorage.setItem("meetingai_last_segments", JSON.stringify(data.transcript.segments));
+      } catch {}
+    }
     const result = data.processing_results ?? data.ai_result;
-    if (result) setAiResult(result);
+    if (result) {
+      setAiResult(result);
+      try {
+        localStorage.setItem("meetingai_last_ai_result", JSON.stringify(result));
+      } catch {}
+    }
     if (typeof data.pending_review_count === "number") {
       setPendingReviewCount(data.pending_review_count);
     }
@@ -73,6 +153,7 @@ export default function App() {
   function applyLiveSegments(live: Segment[]) {
     setSegments(live);
   }
+
 
   return (
     <div className="flex min-h-screen">
