@@ -28,6 +28,11 @@ export default function TasksCard({ tasks, onTaskUpdated }: Props) {
   const [retryingEmailId, setRetryingEmailId] = useState<number | null>(null);
   const [retryingSlackId, setRetryingSlackId] = useState<number | null>(null);
   const [localStatuses, setLocalStatuses] = useState<Record<number | string, string>>({});
+  const [localEmailSent, setLocalEmailSent] = useState<Record<number | string, boolean>>({});
+  const [localSlackSent, setLocalSlackSent] = useState<Record<number | string, boolean>>({});
+
+
+
 
   async function toggleStatus(task: TaskItem, index: number) {
     const taskId = task.id ?? task.db_id;
@@ -56,6 +61,7 @@ export default function TasksCard({ tasks, onTaskUpdated }: Props) {
     try {
       const res = await api.retryTaskEmail(taskId);
       if (res.success) {
+        setLocalEmailSent((prev) => ({ ...prev, [taskId]: true }));
         toast.success(res.message);
         onTaskUpdated?.();
       } else {
@@ -74,6 +80,7 @@ export default function TasksCard({ tasks, onTaskUpdated }: Props) {
     try {
       const res = await api.retryTaskSlack(taskId);
       if (res.success) {
+        setLocalSlackSent((prev) => ({ ...prev, [taskId]: true }));
         toast.success(res.message);
         onTaskUpdated?.();
       } else {
@@ -88,8 +95,10 @@ export default function TasksCard({ tasks, onTaskUpdated }: Props) {
 
   async function resendManual(index: number, task: TaskItem) {
     setResendingIndex(index);
+    const taskId = task.id ?? task.db_id;
     try {
       const res = await api.sendTaskNotificationManual(task.assignee, task.task, task.due_date ?? undefined);
+      setLocalEmailSent((prev) => ({ ...prev, [taskId ?? index]: true }));
       toast.success(res.message ?? `Dispatched to ${task.assignee}`);
       onTaskUpdated?.();
     } catch (e) {
@@ -98,6 +107,7 @@ export default function TasksCard({ tasks, onTaskUpdated }: Props) {
       setResendingIndex(null);
     }
   }
+
 
   const [filter, setFilter] = useState<"all" | "pending" | "done">("all");
 
@@ -262,56 +272,65 @@ export default function TasksCard({ tasks, onTaskUpdated }: Props) {
                           <span>Due: {t.due_date || "None"}</span>
 
                           {/* Email Status & Retry (#3 Retry button) */}
-                          <div className="flex items-center gap-1">
-                            <span
-                              className={`channel-status ${
-                                t.email_sent ? "sent" : t.email_failed ? "not-sent bg-rose-950/40 text-rose-300" : "not-sent"
-                              }`}
-                            >
-                              <Mail className="w-3 h-3" />
-                              {t.email_sent ? "Email Sent" : t.email_failed ? "Email Failed" : "Email Pending"}
-                            </span>
-                            {t.email_failed && taskId && (
-                              <button
-                                onClick={() => retryEmail(taskId)}
-                                disabled={retryingEmailId === taskId}
-                                title="Retry sending email"
-                                className="p-1 text-rose-400 hover:text-rose-200 hover:bg-rose-900/30 rounded-md transition-colors"
-                              >
-                                {retryingEmailId === taskId ? (
-                                  <Loader2 className="w-3 h-3 animate-spin" />
-                                ) : (
-                                  <RotateCw className="w-3 h-3" />
-                                )}
-                              </button>
-                            )}
-                          </div>
+                          {(() => {
+                            const isEmailSent = localEmailSent[taskId ?? i] ?? t.email_sent;
+                            const isSlackSent = localSlackSent[taskId ?? i] ?? t.slack_sent;
+                            return (
+                              <>
+                                <div className="flex items-center gap-1">
+                                  <span
+                                    className={`channel-status ${
+                                      isEmailSent ? "sent" : t.email_failed ? "not-sent bg-rose-950/40 text-rose-300" : "not-sent"
+                                    }`}
+                                  >
+                                    <Mail className="w-3 h-3" />
+                                    {isEmailSent ? "Email Sent" : t.email_failed ? "Email Failed" : "Email Pending"}
+                                  </span>
+                                  {t.email_failed && taskId && (
+                                    <button
+                                      onClick={() => retryEmail(taskId)}
+                                      disabled={retryingEmailId === taskId}
+                                      title="Retry sending email"
+                                      className="p-1 text-rose-400 hover:text-rose-200 hover:bg-rose-900/30 rounded-md transition-colors"
+                                    >
+                                      {retryingEmailId === taskId ? (
+                                        <Loader2 className="w-3 h-3 animate-spin" />
+                                      ) : (
+                                        <RotateCw className="w-3 h-3" />
+                                      )}
+                                    </button>
+                                  )}
+                                </div>
 
-                          {/* Slack Status & Retry (#3 Retry button) */}
-                          <div className="flex items-center gap-1">
-                            <span
-                              className={`channel-status ${
-                                t.slack_sent ? "sent" : t.slack_failed ? "not-sent bg-rose-950/40 text-rose-300" : "not-sent"
-                              }`}
-                            >
-                              <MessageSquare className="w-3 h-3" />
-                              {t.slack_sent ? "Slack Sent" : t.slack_failed ? "Slack Failed" : "Slack Pending"}
-                            </span>
-                            {t.slack_failed && taskId && (
-                              <button
-                                onClick={() => retrySlack(taskId)}
-                                disabled={retryingSlackId === taskId}
-                                title="Retry sending Slack"
-                                className="p-1 text-rose-400 hover:text-rose-200 hover:bg-rose-900/30 rounded-md transition-colors"
-                              >
-                                {retryingSlackId === taskId ? (
-                                  <Loader2 className="w-3 h-3 animate-spin" />
-                                ) : (
-                                  <RotateCw className="w-3 h-3" />
-                                )}
-                              </button>
-                            )}
-                          </div>
+                                {/* Slack Status & Retry (#3 Retry button) */}
+                                <div className="flex items-center gap-1">
+                                  <span
+                                    className={`channel-status ${
+                                      isSlackSent ? "sent" : t.slack_failed ? "not-sent bg-rose-950/40 text-rose-300" : "not-sent"
+                                    }`}
+                                  >
+                                    <MessageSquare className="w-3 h-3" />
+                                    {isSlackSent ? "Slack Sent" : t.slack_failed ? "Slack Failed" : "Slack Pending"}
+                                  </span>
+                                  {t.slack_failed && taskId && (
+                                    <button
+                                      onClick={() => retrySlack(taskId)}
+                                      disabled={retryingSlackId === taskId}
+                                      title="Retry sending Slack"
+                                      className="p-1 text-rose-400 hover:text-rose-200 hover:bg-rose-900/30 rounded-md transition-colors"
+                                    >
+                                      {retryingSlackId === taskId ? (
+                                        <Loader2 className="w-3 h-3 animate-spin" />
+                                      ) : (
+                                        <RotateCw className="w-3 h-3" />
+                                      )}
+                                    </button>
+                                  )}
+                                </div>
+                              </>
+                            );
+                          })()}
+
                         </div>
                       </div>
                     </div>
