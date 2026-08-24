@@ -99,24 +99,66 @@ export default function TasksCard({ tasks, onTaskUpdated }: Props) {
     }
   }
 
+  const [filter, setFilter] = useState<"all" | "pending" | "done">("all");
+
+  const filteredTasks = tasks.filter((t, i) => {
+    const taskId = t.id ?? t.db_id;
+    const currentStatus = localStatuses[taskId ?? i] ?? t.status ?? "pending";
+    if (filter === "pending") return currentStatus !== "done";
+    if (filter === "done") return currentStatus === "done";
+    return true;
+  });
+
   return (
     <motion.div whileHover={cardHover} whileTap={cardTap} className="glass-card h-full">
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
         <div className="flex items-center gap-2">
           <ListChecks className="w-5 h-5 text-primary" />
           <h2 className="text-lg font-bold">Extracted Action Items &amp; Tasks</h2>
         </div>
-        <span className="badge badge-active">{tasks.length} tasks</span>
+
+        {/* Filter Tabs */}
+        <div className="flex items-center gap-1.5 p-1 bg-slate-900/60 rounded-xl border border-white/5 text-xs">
+          <button
+            onClick={() => setFilter("all")}
+            className={`px-2.5 py-1 rounded-lg font-medium transition ${
+              filter === "all" ? "bg-primary/20 text-primary border border-primary/30" : "text-slate-400 hover:text-slate-200"
+            }`}
+          >
+            All ({tasks.length})
+          </button>
+          <button
+            onClick={() => setFilter("pending")}
+            className={`px-2.5 py-1 rounded-lg font-medium transition ${
+              filter === "pending" ? "bg-amber-500/20 text-amber-300 border border-amber-500/30" : "text-slate-400 hover:text-slate-200"
+            }`}
+          >
+            Pending ({tasks.filter((t, i) => (localStatuses[t.id ?? t.db_id ?? i] ?? t.status ?? "pending") !== "done").length})
+          </button>
+          <button
+            onClick={() => setFilter("done")}
+            className={`px-2.5 py-1 rounded-lg font-medium transition ${
+              filter === "done" ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30" : "text-slate-400 hover:text-slate-200"
+            }`}
+          >
+            Completed ({tasks.filter((t, i) => (localStatuses[t.id ?? t.db_id ?? i] ?? t.status ?? "pending") === "done").length})
+          </button>
+        </div>
       </div>
 
-      {tasks.length === 0 ? (
+      {filteredTasks.length === 0 ? (
         <div className="text-slate-500 italic text-sm py-4 text-center">
-          No tasks detected yet. Transcribe meeting speech to trigger Groq LLM extraction.
+          {filter === "all"
+            ? "No tasks detected yet. Transcribe meeting speech to trigger Groq LLM extraction."
+            : filter === "pending"
+            ? "All tasks completed! 🎉"
+            : "No completed tasks yet. Check off a task when finished."}
         </div>
       ) : (
         <div className="space-y-3">
           <AnimatePresence initial={false}>
-            {tasks.map((t, i) => {
+            {filteredTasks.map((t, i) => {
+
               const taskId = t.id ?? t.db_id;
               const status = localStatuses[taskId ?? i] ?? t.status ?? "pending";
               const isDone = status === "done";
