@@ -1,0 +1,13 @@
+target/
+*.class
+
+# Google OAuth credentials & stored token — never commit
+credentials.json
+tokens/
+
+# Runtime settings persisted by SettingsController (Slack token, Vexa key, etc.)
+runtime-settings.properties
+
+# IDE
+.vscode/
+.idea/
