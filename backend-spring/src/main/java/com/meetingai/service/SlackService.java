@@ -98,6 +98,16 @@ public class SlackService {
         }
     }
 
+    /** Send a plain markdown message to any channel — used by DigestService (#6) */
+    public boolean sendRawMessage(String channelId, String markdownText) {
+        if (slackClient == null) { log.warn("Slack not configured"); return false; }
+        try {
+            var response = slackClient.chatPostMessage(
+                ChatPostMessageRequest.builder().channel(channelId).text(markdownText).mrkdwn(true).build());
+            return response.isOk();
+        } catch (Exception e) { log.error("Slack raw message error: {}", e.getMessage()); return false; }
+    }
+
     private String formatDueDate(String dueDate) {
         if (dueDate == null || dueDate.isBlank()) return null;
         try {

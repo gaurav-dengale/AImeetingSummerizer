@@ -240,6 +240,25 @@ public class GoogleService {
         }
     }
 
+    /** Sends a custom HTML email to any address — used by DigestService (#6) */
+    public boolean sendRawEmail(String toEmail, String subject, String htmlBody) {
+        Credential credential = getCredential();
+        if (credential == null) { log.warn("No Google credentials for raw email"); return false; }
+        try {
+            Gmail gmail = new Gmail.Builder(HTTP_TRANSPORT, JSON_FACTORY, credential)
+                    .setApplicationName(APPLICATION_NAME).build();
+            String rawMessage = "To: " + toEmail + "\r\n"
+                    + "Subject: " + subject + "\r\n"
+                    + "MIME-Version: 1.0\r\n"
+                    + "Content-Type: text/html; charset=UTF-8\r\n\r\n" + htmlBody;
+            String encoded = Base64.getUrlEncoder().encodeToString(
+                    rawMessage.getBytes(StandardCharsets.UTF_8));
+            Message message = new Message(); message.setRaw(encoded);
+            gmail.users().messages().send("me", message).execute();
+            return true;
+        } catch (Exception e) { log.error("Raw email error: {}", e.getMessage()); return false; }
+    }
+
     private String capitalize(String name) {
         if (name == null || name.isBlank()) return name;
         return name.substring(0, 1).toUpperCase() + name.substring(1).toLowerCase();

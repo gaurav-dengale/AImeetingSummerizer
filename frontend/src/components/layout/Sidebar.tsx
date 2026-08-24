@@ -13,12 +13,17 @@ import {
   PanelLeftOpen,
   Command,
   Send,
+  ShieldAlert,
+  History,
+  BarChart3,
+  BellRing,
 } from "lucide-react";
 
 interface NavItem {
   id: string;
   label: string;
   icon: React.ElementType;
+  badge?: number | string;
 }
 
 interface NavGroup {
@@ -26,9 +31,10 @@ interface NavGroup {
   items: NavItem[];
 }
 
+
 const NAV_GROUPS: NavGroup[] = [
   {
-    heading: "Live",
+    heading: "Live Capture",
     items: [
       { id: "overview", label: "Overview", icon: LayoutGrid },
       { id: "meet-bot", label: "Meet Bot", icon: Video },
@@ -36,19 +42,26 @@ const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
-    heading: "Intelligence",
+    heading: "Intelligence & Review",
     items: [
+      { id: "review", label: "Review Queue", icon: ShieldAlert },
       { id: "transcript", label: "Transcript", icon: FileText },
-      { id: "tasks", label: "Tasks", icon: ListChecks },
+      { id: "tasks", label: "Active Tasks", icon: ListChecks },
       { id: "calendar", label: "Scheduling", icon: CalendarClock },
-      { id: "dispatcher", label: "Dispatcher", icon: Send },
+      { id: "dispatcher", label: "Manual Dispatch", icon: Send },
     ],
   },
   {
-    heading: "Configuration",
-    items: [{ id: "settings", label: "Settings", icon: Settings }],
+    heading: "Management",
+    items: [
+      { id: "history", label: "Meeting History", icon: History },
+      { id: "analytics", label: "Analytics", icon: BarChart3 },
+      { id: "digests", label: "Task Digests", icon: BellRing },
+      { id: "settings", label: "Settings", icon: Settings },
+    ],
   },
 ];
+
 
 const ALL_IDS = NAV_GROUPS.flatMap((g) => g.items.map((i) => i.id));
 

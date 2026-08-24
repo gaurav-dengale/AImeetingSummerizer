@@ -18,6 +18,9 @@ runtime-settings.properties
 .env
 .env.*
 *.log
+*.db
+*.db-journal
+*.db-wal
 
 # Python / FastAPI
 __pycache__/
