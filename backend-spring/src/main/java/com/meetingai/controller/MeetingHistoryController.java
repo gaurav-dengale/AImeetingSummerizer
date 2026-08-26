@@ -57,6 +57,23 @@ public class MeetingHistoryController {
                 tasks.add(taskToMap(t));
             }
             body.put("tasks", tasks);
+
+            List<Map<String, Object>> decisions = new ArrayList<>();
+            for (var d : db.getDecisionsForMeeting(m.getId())) {
+                Map<String, Object> decMap = new LinkedHashMap<>();
+                decMap.put("id", d.getId());
+                decMap.put("decision", d.getDecision());
+                decMap.put("category", d.getCategory());
+                decMap.put("rationale", d.getRationale());
+                decMap.put("consensus_score", d.getConsensusScore());
+                decMap.put("approving_speakers", d.getApprovingSpeakers());
+                decMap.put("dissenting_speakers", d.getDissentingSpeakers());
+                decMap.put("provenance_hash", d.getProvenanceHash());
+                decMap.put("status", d.getStatus());
+                decMap.put("created_at", d.getCreatedAt());
+                decisions.add(decMap);
+            }
+            body.put("decisions", decisions);
             return ResponseEntity.ok(body);
         }).orElse(ResponseEntity.notFound().build());
     }

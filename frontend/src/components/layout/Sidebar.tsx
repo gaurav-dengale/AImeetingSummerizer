@@ -18,8 +18,10 @@ import {
   BarChart3,
   BellRing,
   ArrowLeftRight,
+  ShieldCheck,
+  GitCommit,
+  Sparkles,
 } from "lucide-react";
-
 
 interface NavItem {
   id: string;
@@ -33,7 +35,6 @@ interface NavGroup {
   items: NavItem[];
 }
 
-
 const NAV_GROUPS: NavGroup[] = [
   {
     heading: "Live Capture",
@@ -46,6 +47,8 @@ const NAV_GROUPS: NavGroup[] = [
   {
     heading: "Intelligence & Review",
     items: [
+      { id: "decisions", label: "Decision Ledger", icon: ShieldCheck },
+      { id: "conflicts", label: "Constraint Graph", icon: GitCommit },
       { id: "review", label: "Review Queue", icon: ShieldAlert },
       { id: "transcript", label: "Transcript", icon: FileText },
       { id: "tasks", label: "Active Tasks", icon: ListChecks },
@@ -63,9 +66,7 @@ const NAV_GROUPS: NavGroup[] = [
       { id: "settings", label: "Settings", icon: Settings },
     ],
   },
-
 ];
-
 
 const ALL_IDS = NAV_GROUPS.flatMap((g) => g.items.map((i) => i.id));
 
@@ -73,9 +74,10 @@ interface Props {
   collapsed: boolean;
   onToggleCollapsed: () => void;
   onOpenPalette: () => void;
+  onOpenAskAi?: () => void;
 }
 
-export default function Sidebar({ collapsed, onToggleCollapsed, onOpenPalette }: Props) {
+export default function Sidebar({ collapsed, onToggleCollapsed, onOpenPalette, onOpenAskAi }: Props) {
   const [active, setActive] = useState(ALL_IDS[0]);
 
   useEffect(() => {
@@ -130,6 +132,21 @@ export default function Sidebar({ collapsed, onToggleCollapsed, onOpenPalette }:
           </>
         )}
       </button>
+
+      {onOpenAskAi && (
+        <button
+          onClick={onOpenAskAi}
+          className="mx-3 mt-1.5 flex items-center gap-2 px-2.5 py-2 rounded-lg bg-gradient-to-r from-brand-purple/20 to-brand-blue/20 border border-brand-purple/40 text-white text-xs hover:brightness-110 transition-all shadow-sm"
+        >
+          <Sparkles className="w-3.5 h-3.5 text-brand-purple shrink-0" />
+          {!collapsed && (
+            <>
+              <span className="flex-1 text-left font-medium">Ask AI Memory</span>
+              <span className="text-[9px] font-mono bg-white/10 px-1.5 py-0.2 rounded text-emerald-400">RAG</span>
+            </>
+          )}
+        </button>
+      )}
 
       <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-6">
         {NAV_GROUPS.map((group) => (

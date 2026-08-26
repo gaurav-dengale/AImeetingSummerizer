@@ -17,8 +17,8 @@ public class WebConfig implements WebMvcConfigurer {
     }
 
     @Bean
-    public RestClient restClient() {
-        return RestClient.builder().build();
+    public RestClient restClient(RestClient.Builder builder) {
+        return builder.build();
     }
 
     @Override

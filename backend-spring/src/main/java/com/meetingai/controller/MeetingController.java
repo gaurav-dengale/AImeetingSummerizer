@@ -230,6 +230,30 @@ public class MeetingController {
                 aiResults.put("scheduled_event_created", link != null);
             }
         }
+
+        // Persist extracted decisions (Cryptographic Consensus Ledger)
+        Object decisionsObj = aiResults.get("decisions");
+        if (decisionsObj instanceof List<?> decisionsList) {
+            for (Object decObj : decisionsList) {
+                if (!(decObj instanceof Map)) continue;
+                Map<String, Object> dec = (Map<String, Object>) decObj;
+                String decisionText = str(dec.get("decision"));
+                String category = str(dec.get("category"));
+                String rationale = str(dec.get("rationale"));
+                int consensusScore = toInt(dec.get("consensus_score"), 85);
+                String approvers = String.valueOf(dec.getOrDefault("approvers", "[]"));
+                String dissenters = String.valueOf(dec.getOrDefault("dissenters", "[]"));
+
+                if (decisionText != null && !decisionText.isBlank()) {
+                    var savedDec = databaseService.saveDecision(
+                        meeting, decisionText, category, rationale,
+                        consensusScore, approvers, dissenters
+                    );
+                    dec.put("db_id", savedDec.getId());
+                    dec.put("provenance_hash", savedDec.getProvenanceHash());
+                }
+            }
+        }
     }
 
     private static String str(Object o) { return o == null ? null : o.toString(); }

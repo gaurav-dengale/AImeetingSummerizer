@@ -17,6 +17,10 @@ import MeetingHistoryPage from "./components/MeetingHistoryPage";
 import AnalyticsDashboard from "./components/AnalyticsDashboard";
 import DigestSettingsCard from "./components/DigestSettingsCard";
 import BiDirectionalSyncCard from "./components/BiDirectionalSyncCard";
+import DecisionLedgerCard from "./components/DecisionLedgerCard";
+import TemporalConflictCard from "./components/TemporalConflictCard";
+import AskAiDrawer from "./components/AskAiDrawer";
+import { Sparkles } from "lucide-react";
 
 import { api, type AiResult, type Segment, type StatusResponse, type TranscriptResponse } from "./lib/api";
 import { staggerContainer, tileIn } from "./lib/variants";
@@ -24,6 +28,7 @@ import { staggerContainer, tileIn } from "./lib/variants";
 export default function App() {
   const [status, setStatus] = useState<StatusResponse | null>(null);
   const [statusError, setStatusError] = useState(false);
+  const [askAiOpen, setAskAiOpen] = useState(false);
   const [segments, setSegments] = useState<Segment[]>(() => {
     try {
       const saved = localStorage.getItem("meetingai_last_segments");
@@ -165,9 +170,24 @@ export default function App() {
         collapsed={sidebarCollapsed}
         onToggleCollapsed={() => setSidebarCollapsed((c) => !c)}
         onOpenPalette={() => setPaletteOpen(true)}
+        onOpenAskAi={() => setAskAiOpen(true)}
       />
 
       <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
+      <AskAiDrawer isOpen={askAiOpen} onClose={() => setAskAiOpen(false)} />
+
+      {/* Floating Ask AI Quick Action Button */}
+      <motion.button
+        onClick={() => setAskAiOpen(true)}
+        initial={{ scale: 0, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+        className="fixed bottom-6 right-6 z-40 flex items-center gap-2 px-4 py-2.5 rounded-full bg-brand-gradient text-white text-xs font-semibold shadow-xl shadow-brand-purple/25 border border-white/20 backdrop-blur-lg hover:shadow-brand-purple/40 transition-shadow"
+      >
+        <Sparkles className="w-4 h-4 animate-pulse text-amber-300" />
+        <span>Ask AI Memory</span>
+      </motion.button>
 
       <div className="flex-1 min-w-0">
         <Topbar status={status} statusError={statusError} />
@@ -197,6 +217,16 @@ export default function App() {
           <motion.div id="mic" variants={tileIn} className="col-span-12 lg:col-span-5 scroll-mt-24">
             <MicCard onLiveSegments={applyLiveSegments} onResult={applyResult} />
           </motion.div>
+
+          {/* Cryptographic Decision Ledger (ADR Engine) */}
+          <motion.section id="decisions" variants={tileIn} className="col-span-12 scroll-mt-24">
+            <DecisionLedgerCard />
+          </motion.section>
+
+          {/* Cross-Meeting Temporal Constraint Graph (DAG Conflict Solver) */}
+          <motion.section id="conflicts" variants={tileIn} className="col-span-12 scroll-mt-24">
+            <TemporalConflictCard />
+          </motion.section>
 
           {/* Human-in-the-Loop Review Queue (#8, #12) */}
           <motion.section id="review" variants={tileIn} className="col-span-12 scroll-mt-24">
@@ -235,7 +265,6 @@ export default function App() {
 
           {/* Persistent Meeting History (#1) */}
           <motion.section id="history" variants={tileIn} className="col-span-12 scroll-mt-24">
-
             <MeetingHistoryPage />
           </motion.section>
 

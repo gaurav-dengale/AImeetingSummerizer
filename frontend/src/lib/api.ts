@@ -101,6 +101,57 @@ export interface AnalyticsData {
   top_assignees: TopAssignee[];
 }
 
+export interface DecisionItem {
+  id?: number;
+  db_id?: number;
+  decision: string;
+  category?: string;
+  rationale?: string;
+  consensus_score: number;
+  approving_speakers?: string | string[];
+  dissenting_speakers?: string | string[];
+  approvers?: string[];
+  dissenters?: string[];
+  provenance_hash?: string;
+  status?: string;
+  created_at?: string;
+}
+
+export interface TaskConflict {
+  conflictId: string;
+  assignee: string;
+  conflictScore: number;
+  severity: "critical" | "high" | "moderate";
+  reason: string;
+  involvedTasks: Array<{
+    id: number;
+    task: string;
+    assignee: string;
+    due_date?: string;
+    priority: string;
+    status: string;
+    meeting_title?: string;
+    meeting_id?: number;
+  }>;
+  suggestedRebalance: {
+    target_task_id: number;
+    current_due_date?: string;
+    recommended_due_date: string;
+    rationale: string;
+  };
+}
+
+export interface AskAiResponse {
+  answer: string;
+  key_citations?: Array<{
+    speaker: string;
+    quote: string;
+    relevance: string;
+  }>;
+  related_action_items?: string[];
+  confidence?: number;
+}
+
 export interface AiServiceHealth {
   status?: string;
   service?: string;
@@ -276,6 +327,44 @@ export const api = {
     }>("/api/webhooks/simulate", {
       method: "POST",
       body: JSON.stringify(data),
+    }),
+
+  // ── Cryptographic Decision Ledger (ADR) ──
+  getDecisions: () => request<DecisionItem[]>("/api/decisions"),
+  getMeetingDecisions: (meetingId: number) => request<DecisionItem[]>(`/api/decisions/meeting/${meetingId}`),
+  verifyDecision: (hash: string) =>
+    request<{
+      verified: boolean;
+      decision_id?: number;
+      decision?: string;
+      category?: string;
+      consensus_score?: number;
+      status?: string;
+      timestamp?: string;
+      hash?: string;
+      message?: string;
+    }>("/api/decisions/verify", {
+      method: "POST",
+      body: JSON.stringify({ hash }),
+    }),
+
+  // ── Cross-Meeting Temporal Conflict Solver ──
+  getConflicts: () => request<TaskConflict[]>("/api/conflicts"),
+  resolveConflict: (taskId: number, newDueDate: string) =>
+    request<{
+      success: boolean;
+      message: string;
+      remaining_conflicts: TaskConflict[];
+    }>("/api/conflicts/resolve", {
+      method: "POST",
+      body: JSON.stringify({ taskId, newDueDate }),
+    }),
+
+  // ── Interactive Grounded Meeting RAG (Ask AI) ──
+  askMeetingAi: (query: string, meetingId?: number) =>
+    request<AskAiResponse>("/api/meetings/ask", {
+      method: "POST",
+      body: JSON.stringify({ query, meetingId }),
     }),
 };
 

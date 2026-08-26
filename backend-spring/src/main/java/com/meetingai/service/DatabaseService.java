@@ -1,9 +1,11 @@
 package com.meetingai.service;
 
 import com.meetingai.entity.AppSettingEntity;
+import com.meetingai.entity.DecisionEntity;
 import com.meetingai.entity.MeetingEntity;
 import com.meetingai.entity.TaskEntity;
 import com.meetingai.repository.AppSettingRepository;
+import com.meetingai.repository.DecisionRepository;
 import com.meetingai.repository.MeetingRepository;
 import com.meetingai.repository.TaskRepository;
 import org.slf4j.Logger;
@@ -14,11 +16,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 import java.util.*;
 
-/**
- * DatabaseService � thin service wrapping JPA repositories.
- * Spring Data JPA auto-generates SQL from method names.
- * Covers features: #1 #2 #3 #6 #9 #11 #12 #13 #14 #16
- */
 @Service
 @Transactional
 public class DatabaseService {
@@ -28,13 +25,16 @@ public class DatabaseService {
     private final MeetingRepository meetingRepo;
     private final TaskRepository taskRepo;
     private final AppSettingRepository settingRepo;
+    private final DecisionRepository decisionRepo;
 
     public DatabaseService(MeetingRepository meetingRepo,
                            TaskRepository taskRepo,
-                           AppSettingRepository settingRepo) {
+                           AppSettingRepository settingRepo,
+                           DecisionRepository decisionRepo) {
         this.meetingRepo = meetingRepo;
         this.taskRepo    = taskRepo;
         this.settingRepo = settingRepo;
+        this.decisionRepo = decisionRepo;
     }
 
     // -- Meetings ---------------------------------------------------------------
@@ -214,5 +214,35 @@ public class DatabaseService {
         Map<String, String> result = new LinkedHashMap<>();
         settingRepo.findAll().forEach(s -> result.put(s.getKey(), s.getValue()));
         return result;
+    }
+
+    // -- Decisions (Cryptographic Consensus Ledger) ---------------------------
+
+    public DecisionEntity saveDecision(MeetingEntity meeting, String decision, String category,
+                                       String rationale, int consensusScore, String approvers,
+                                       String dissenters) {
+        DecisionEntity d = new DecisionEntity(meeting, decision, category, rationale,
+                consensusScore, approvers, dissenters);
+        return decisionRepo.save(d);
+    }
+
+    @Transactional(readOnly = true)
+    public List<DecisionEntity> getDecisionsForMeeting(Long meetingId) {
+        return decisionRepo.findByMeetingIdOrderByCreatedAtDesc(meetingId);
+    }
+
+    @Transactional(readOnly = true)
+    public List<DecisionEntity> getAllDecisions() {
+        return decisionRepo.findAllByOrderByCreatedAtDesc();
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<DecisionEntity> getDecisionByHash(String hash) {
+        return decisionRepo.findByProvenanceHash(hash);
+    }
+
+    @Transactional(readOnly = true)
+    public List<TaskEntity> getAllTasks() {
+        return taskRepo.findAll();
     }
 }

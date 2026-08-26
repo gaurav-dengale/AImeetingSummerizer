@@ -156,6 +156,8 @@ def extract_meeting_intelligence(transcript_data):
     all_tasks = []
     all_events = []
     all_summaries = []
+    all_decisions = []
+    all_blockers = []
 
     for i, chunk in enumerate(chunks):
         if i > 0:
@@ -178,12 +180,19 @@ def extract_meeting_intelligence(transcript_data):
         prompt = f"""
 Current Date & Time: {now_str}
 
-Analyze this meeting transcript and extract structured intelligence.
+Analyze this meeting transcript and extract structured intelligence including action tasks, consensus decisions, and architectural/project blockers.
 
 IMPORTANT RULES:
-- confidence: 0-100 score. Give HIGH confidence (80-100) only if assignee name, task, and deadline are CLEARLY stated. Give LOW confidence (<50) if vague like "someone should..." or "we might...".
-- priority: "critical" if urgent/deadline language used (ASAP, urgent, critical, must, need by tomorrow), "medium" for normal tasks, "low" for optional/future items.
-- speaker_attribution: use the [Speaker] labels to assign tasks to the correct person.
+- confidence: 0-100 score for tasks. High confidence (80-100) only if assignee, task, and deadline are CLEARLY stated.
+- priority: "critical" if urgent/deadline language used, "medium" for normal tasks, "low" for future/optional.
+- decisions: Extract formal agreements reached. Include:
+  * "decision": Clear statement of what was decided.
+  * "category": "Architecture" | "Product" | "Process" | "Budget" | "Security" | "General".
+  * "rationale": Why this was agreed upon.
+  * "consensus_score": 0-100 score indicating degree of vocal/semantic agreement across speakers. (90-100 = unanimous/strong affirmation, 60-80 = majority agreement, <60 = contested).
+  * "approvers": List of speaker names who affirmed.
+  * "dissenters": List of speaker names who expressed concern or objected.
+- blockers_risks: Extract any technical/resource roadblocks or risk items discussed.
 
 Output valid JSON with this exact schema:
 {{
@@ -197,12 +206,29 @@ Output valid JSON with this exact schema:
     "notes": string or null,
     "task_assignments": [
         {{
-            "assignee": string (the person responsible, from speaker context),
-            "task": string (clear action description),
+            "assignee": string,
+            "task": string,
             "due_date": string (ISO 8601 YYYY-MM-DD) or null,
             "confidence": integer 0-100,
             "priority": "critical" | "medium" | "low",
             "sentiment_cues": string
+        }}
+    ],
+    "decisions": [
+        {{
+            "decision": string,
+            "category": string,
+            "rationale": string,
+            "consensus_score": integer 0-100,
+            "approvers": [string],
+            "dissenters": [string]
+        }}
+    ],
+    "blockers_risks": [
+        {{
+            "risk": string,
+            "severity": "high" | "medium" | "low",
+            "owner": string or null
         }}
     ]
 }}
@@ -236,14 +262,74 @@ Transcript:
                     "sentiment_cues": t.get("sentiment_cues", "")
                 })
 
+            for d in res.get("decisions", []):
+                if isinstance(d, dict) and d.get("decision"):
+                    all_decisions.append({
+                        "decision":        d.get("decision", ""),
+                        "category":        d.get("category", "General"),
+                        "rationale":       d.get("rationale", ""),
+                        "consensus_score": d.get("consensus_score", 85),
+                        "approvers":       d.get("approvers", []),
+                        "dissenters":      d.get("dissenters", [])
+                    })
+
+            for b in res.get("blockers_risks", []):
+                if isinstance(b, dict) and b.get("risk"):
+                    all_blockers.append({
+                        "risk":     b.get("risk", ""),
+                        "severity": b.get("severity", "medium"),
+                        "owner":    b.get("owner")
+                    })
+
     summary_bullets = all_summaries[:5] if all_summaries else ["Meeting processed — no summary available."]
     summary_text = "\n".join(f"• {b}" for b in summary_bullets)
 
     return {
         "scheduled_event":  all_events[0] if all_events else None,
         "tasks":            all_tasks,
+        "decisions":        all_decisions,
+        "blockers_risks":   all_blockers,
         "summary":          summary_text,
         "summary_bullets":  summary_bullets,
         "total_segments":   len(segments),
-        "total_tasks":      len(all_tasks)
+        "total_tasks":      len(all_tasks),
+        "total_decisions":  len(all_decisions)
+    }
+
+def answer_meeting_query(query: str, meeting_context: str) -> dict:
+    """
+    RAG / Semantic Q&A over meeting transcripts and intelligence records.
+    Returns direct grounded answer with citations.
+    """
+    prompt = f"""
+You are an intelligent executive meeting assistant. Answer the user's question accurately based ONLY on the provided meeting context.
+If the information is not present in the context, clearly state that it was not discussed.
+
+User Question: {query}
+
+Meeting Context & Transcripts:
+\"\"\"{meeting_context[:12000]}\"\"\"
+
+Output valid JSON with this exact schema:
+{{
+    "answer": string (clear, executive, formatted response),
+    "key_citations": [
+        {{
+            "speaker": string,
+            "quote": string (direct snippet or mention from transcript),
+            "relevance": string
+        }}
+    ],
+    "related_action_items": [string],
+    "confidence": integer 0-100
+}}
+"""
+    res = call_ai_pipeline(prompt)
+    if res and isinstance(res, dict):
+        return res
+    return {
+        "answer": "Unable to process query or no relevant context found.",
+        "key_citations": [],
+        "related_action_items": [],
+        "confidence": 0
     }

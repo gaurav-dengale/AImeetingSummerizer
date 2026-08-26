@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from groq_service import extract_meeting_intelligence
+from groq_service import extract_meeting_intelligence, answer_meeting_query
 from speech_service import (
     start_recording_session,
     stop_recording_session,
@@ -38,6 +38,10 @@ class TranscriptPayload(BaseModel):
     segments: Optional[List[Dict[str, Any]]] = []
     meeting_id: Optional[str] = None
 
+class AskPayload(BaseModel):
+    query: Optional[str] = ""
+    context: Optional[str] = ""
+
 @app.get("/health")
 def health_check():
     return {
@@ -55,6 +59,13 @@ def process_transcript(payload: TranscriptPayload):
     }
     result = extract_meeting_intelligence(transcript_data)
     return result
+
+@app.post("/ai/ask")
+def ask_meeting(payload: AskPayload):
+    if not payload.query or not payload.query.strip():
+        raise HTTPException(status_code=400, detail="Query parameter is required")
+    res = answer_meeting_query(payload.query, payload.context or "")
+    return res
 
 @app.post("/audio/start")
 def start_mic_recording():

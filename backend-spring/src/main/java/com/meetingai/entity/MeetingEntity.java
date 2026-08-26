@@ -32,6 +32,9 @@ public class MeetingEntity {
     @OneToMany(mappedBy = "meeting", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<TaskEntity> tasks = new ArrayList<>();
 
+    @OneToMany(mappedBy = "meeting", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private List<DecisionEntity> decisions = new ArrayList<>();
+
     public MeetingEntity() {}
 
     public Long getId() { return id; }
@@ -48,4 +51,5 @@ public class MeetingEntity {
     public int getSegmentCount() { return segmentCount; }
     public void setSegmentCount(int segmentCount) { this.segmentCount = segmentCount; }
     public List<TaskEntity> getTasks() { return tasks; }
+    public List<DecisionEntity> getDecisions() { return decisions; }
 }
