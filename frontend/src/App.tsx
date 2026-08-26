@@ -25,10 +25,13 @@ import { Sparkles } from "lucide-react";
 import { api, type AiResult, type Segment, type StatusResponse, type TranscriptResponse } from "./lib/api";
 import { staggerContainer, tileIn } from "./lib/variants";
 
+export type WorkspaceTab = "studio" | "intelligence" | "history" | "integrations" | "all";
+
 export default function App() {
   const [status, setStatus] = useState<StatusResponse | null>(null);
   const [statusError, setStatusError] = useState(false);
   const [askAiOpen, setAskAiOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<WorkspaceTab>("studio");
   const [segments, setSegments] = useState<Segment[]>(() => {
     try {
       const saved = localStorage.getItem("meetingai_last_segments");
@@ -161,6 +164,13 @@ export default function App() {
     setSegments(live);
   }
 
+  const tabs: Array<{ id: WorkspaceTab; label: string; icon: string; badge?: number }> = [
+    { id: "studio", label: "Live Studio", icon: "🎙️" },
+    { id: "intelligence", label: "Intelligence & ADR", icon: "🧠", badge: pendingReviewCount > 0 ? pendingReviewCount : undefined },
+    { id: "history", label: "History & Analytics", icon: "📊" },
+    { id: "integrations", label: "Integrations & Settings", icon: "⚙️" },
+    { id: "all", label: "All Views", icon: "🌐" },
+  ];
 
   return (
     <div className="flex min-h-screen">
@@ -171,6 +181,8 @@ export default function App() {
         onToggleCollapsed={() => setSidebarCollapsed((c) => !c)}
         onOpenPalette={() => setPaletteOpen(true)}
         onOpenAskAi={() => setAskAiOpen(true)}
+        activeTab={activeTab}
+        onSelectTab={setActiveTab}
       />
 
       <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
@@ -192,91 +204,146 @@ export default function App() {
       <div className="flex-1 min-w-0">
         <Topbar status={status} statusError={statusError} />
 
+        {/* Workspace Segmented Tab Switcher */}
+        <div className="max-w-[1400px] mx-auto px-6 pt-6 pb-2">
+          <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-white/[0.03] border border-white/10 backdrop-blur-xl overflow-x-auto">
+            {tabs.map((tab) => {
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`relative flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
+                    isActive
+                      ? "text-white shadow-lg shadow-black/40"
+                      : "text-ink-muted hover:text-white hover:bg-white/[0.04]"
+                  }`}
+                >
+                  {isActive && (
+                    <motion.div
+                      layoutId="active-tab-indicator"
+                      className="absolute inset-0 rounded-xl bg-gradient-to-r from-brand-purple/30 via-brand-blue/30 to-brand-purple/20 border border-brand-purple/40"
+                      transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                    />
+                  )}
+                  <span className="relative z-10">{tab.icon}</span>
+                  <span className="relative z-10">{tab.label}</span>
+                  {tab.badge !== undefined && (
+                    <span className="relative z-10 text-[10px] font-mono px-1.5 py-0.2 rounded-full bg-rose-500 text-white">
+                      {tab.badge}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
         <motion.main
           variants={staggerContainer}
           initial="hidden"
           animate="show"
-          className="max-w-[1400px] mx-auto px-6 py-8 grid grid-cols-12 gap-6"
+          className="max-w-[1400px] mx-auto px-6 py-6 grid grid-cols-12 gap-6"
         >
-          {/* Overview Hero & Summary */}
-          <motion.section id="overview" variants={tileIn} className="col-span-12 scroll-mt-24">
-            <OverviewHero
-              status={status}
-              segments={segments}
-              aiResult={aiResult}
-              pendingReviewCount={pendingReviewCount}
-            />
-          </motion.section>
+          {/* TAB 1: LIVE STUDIO */}
+          {(activeTab === "studio" || activeTab === "all") && (
+            <>
+              {/* Overview Hero & Summary */}
+              <motion.section id="overview" variants={tileIn} className="col-span-12 scroll-mt-24">
+                <OverviewHero
+                  status={status}
+                  segments={segments}
+                  aiResult={aiResult}
+                  pendingReviewCount={pendingReviewCount}
+                />
+              </motion.section>
 
-          {/* Meeting Bot Card */}
-          <motion.div id="meet-bot" variants={tileIn} className="col-span-12 lg:col-span-7 scroll-mt-24">
-            <BotControlCard onResult={applyResult} />
-          </motion.div>
+              {/* Meeting Bot Card */}
+              <motion.div id="meet-bot" variants={tileIn} className="col-span-12 lg:col-span-7 scroll-mt-24">
+                <BotControlCard onResult={applyResult} />
+              </motion.div>
 
-          {/* Mic Card */}
-          <motion.div id="mic" variants={tileIn} className="col-span-12 lg:col-span-5 scroll-mt-24">
-            <MicCard onLiveSegments={applyLiveSegments} onResult={applyResult} />
-          </motion.div>
+              {/* Mic Card */}
+              <motion.div id="mic" variants={tileIn} className="col-span-12 lg:col-span-5 scroll-mt-24">
+                <MicCard onLiveSegments={applyLiveSegments} onResult={applyResult} />
+              </motion.div>
 
-          {/* Cryptographic Decision Ledger (ADR Engine) */}
-          <motion.section id="decisions" variants={tileIn} className="col-span-12 scroll-mt-24">
-            <DecisionLedgerCard />
-          </motion.section>
+              {/* Live Transcript Feed */}
+              <motion.section id="transcript" variants={tileIn} className="col-span-12 scroll-mt-24">
+                <TranscriptFeed segments={segments} />
+              </motion.section>
 
-          {/* Cross-Meeting Temporal Constraint Graph (DAG Conflict Solver) */}
-          <motion.section id="conflicts" variants={tileIn} className="col-span-12 scroll-mt-24">
-            <TemporalConflictCard />
-          </motion.section>
+              {/* Tasks Card with Status Toggle & Retries (#2, #3, #12, #14) */}
+              <motion.div id="tasks" variants={tileIn} className="col-span-12 lg:col-span-8 scroll-mt-24">
+                <TasksCard tasks={aiResult?.tasks ?? []} onTaskUpdated={refreshStatus} />
+              </motion.div>
 
-          {/* Human-in-the-Loop Review Queue (#8, #12) */}
-          <motion.section id="review" variants={tileIn} className="col-span-12 scroll-mt-24">
-            <TaskReviewPanel onTasksChanged={refreshStatus} />
-          </motion.section>
+              {/* Calendar Card */}
+              <motion.div id="calendar" variants={tileIn} className="col-span-12 lg:col-span-4 scroll-mt-24">
+                <CalendarCard event={aiResult?.scheduled_event} />
+              </motion.div>
+            </>
+          )}
 
-          {/* Live Transcript Feed */}
-          <motion.section id="transcript" variants={tileIn} className="col-span-12 scroll-mt-24">
-            <TranscriptFeed segments={segments} />
-          </motion.section>
+          {/* TAB 2: INTELLIGENCE & ADR */}
+          {(activeTab === "intelligence" || activeTab === "all") && (
+            <>
+              {/* Cryptographic Decision Ledger (ADR Engine) */}
+              <motion.section id="decisions" variants={tileIn} className="col-span-12 scroll-mt-24">
+                <DecisionLedgerCard />
+              </motion.section>
 
-          {/* Tasks Card with Status Toggle & Retries (#2, #3, #12, #14) */}
-          <motion.div id="tasks" variants={tileIn} className="col-span-12 lg:col-span-8 scroll-mt-24">
-            <TasksCard tasks={aiResult?.tasks ?? []} onTaskUpdated={refreshStatus} />
-          </motion.div>
+              {/* Cross-Meeting Temporal Constraint Graph (DAG Conflict Solver) */}
+              <motion.section id="conflicts" variants={tileIn} className="col-span-12 scroll-mt-24">
+                <TemporalConflictCard />
+              </motion.section>
 
-          {/* Calendar Card */}
-          <motion.div id="calendar" variants={tileIn} className="col-span-12 lg:col-span-4 scroll-mt-24">
-            <CalendarCard event={aiResult?.scheduled_event} />
-          </motion.div>
+              {/* Human-in-the-Loop Review Queue (#8, #12) */}
+              <motion.section id="review" variants={tileIn} className="col-span-12 scroll-mt-24">
+                <TaskReviewPanel onTasksChanged={refreshStatus} />
+              </motion.section>
+            </>
+          )}
 
-          {/* Manual Dispatcher */}
-          <motion.div id="dispatcher" variants={tileIn} className="col-span-12 lg:col-span-6 scroll-mt-24">
-            <ManualDispatcherCard />
-          </motion.div>
+          {/* TAB 3: HISTORY & ANALYTICS */}
+          {(activeTab === "history" || activeTab === "all") && (
+            <>
+              {/* Persistent Meeting History (#1) */}
+              <motion.section id="history" variants={tileIn} className="col-span-12 scroll-mt-24">
+                <MeetingHistoryPage />
+              </motion.section>
 
-          {/* Recurring Task Digest (#6) */}
-          <motion.div id="digests" variants={tileIn} className="col-span-12 lg:col-span-6 scroll-mt-24">
-            <DigestSettingsCard />
-          </motion.div>
+              {/* Analytics Dashboard (#11) */}
+              <motion.section id="analytics" variants={tileIn} className="col-span-12 scroll-mt-24">
+                <AnalyticsDashboard />
+              </motion.section>
+            </>
+          )}
 
-          {/* Bi-Directional Task Sync (#7) */}
-          <motion.section id="sync" variants={tileIn} className="col-span-12 scroll-mt-24">
-            <BiDirectionalSyncCard onTaskUpdated={refreshStatus} />
-          </motion.section>
+          {/* TAB 4: INTEGRATIONS & SETTINGS */}
+          {(activeTab === "integrations" || activeTab === "all") && (
+            <>
+              {/* Manual Dispatcher */}
+              <motion.div id="dispatcher" variants={tileIn} className="col-span-12 lg:col-span-6 scroll-mt-24">
+                <ManualDispatcherCard />
+              </motion.div>
 
-          {/* Persistent Meeting History (#1) */}
-          <motion.section id="history" variants={tileIn} className="col-span-12 scroll-mt-24">
-            <MeetingHistoryPage />
-          </motion.section>
+              {/* Recurring Task Digest (#6) */}
+              <motion.div id="digests" variants={tileIn} className="col-span-12 lg:col-span-6 scroll-mt-24">
+                <DigestSettingsCard />
+              </motion.div>
 
-          {/* Analytics Dashboard (#11) */}
-          <motion.section id="analytics" variants={tileIn} className="col-span-12 scroll-mt-24">
-            <AnalyticsDashboard />
-          </motion.section>
+              {/* Bi-Directional Task Sync (#7) */}
+              <motion.section id="sync" variants={tileIn} className="col-span-12 scroll-mt-24">
+                <BiDirectionalSyncCard onTaskUpdated={refreshStatus} />
+              </motion.section>
 
-          {/* Settings */}
-          <motion.section id="settings" variants={tileIn} className="col-span-12 scroll-mt-24">
-            <SettingsCard vexaBaseUrl={status?.vexaBaseUrl} onSaved={refreshStatus} />
-          </motion.section>
+              {/* Settings */}
+              <motion.section id="settings" variants={tileIn} className="col-span-12 scroll-mt-24">
+                <SettingsCard vexaBaseUrl={status?.vexaBaseUrl} onSaved={refreshStatus} />
+              </motion.section>
+            </>
+          )}
         </motion.main>
       </div>
     </div>

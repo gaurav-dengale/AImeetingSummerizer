@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { motion } from "framer-motion";
 import {
   Mic,
@@ -75,32 +75,47 @@ interface Props {
   onToggleCollapsed: () => void;
   onOpenPalette: () => void;
   onOpenAskAi?: () => void;
+  activeTab?: string;
+  onSelectTab?: (tab: any) => void;
 }
 
-export default function Sidebar({ collapsed, onToggleCollapsed, onOpenPalette, onOpenAskAi }: Props) {
+const ID_TO_TAB: Record<string, "studio" | "intelligence" | "history" | "integrations"> = {
+  overview: "studio",
+  "meet-bot": "studio",
+  mic: "studio",
+  transcript: "studio",
+  tasks: "studio",
+  calendar: "studio",
+  decisions: "intelligence",
+  conflicts: "intelligence",
+  review: "intelligence",
+  history: "history",
+  analytics: "history",
+  dispatcher: "integrations",
+  digests: "integrations",
+  sync: "integrations",
+  settings: "integrations",
+};
+
+export default function Sidebar({
+  collapsed,
+  onToggleCollapsed,
+  onOpenPalette,
+  onOpenAskAi,
+  activeTab,
+  onSelectTab,
+}: Props) {
   const [active, setActive] = useState(ALL_IDS[0]);
 
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const visible = entries
-          .filter((e) => e.isIntersecting)
-          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
-        if (visible?.target.id) setActive(visible.target.id);
-      },
-      { rootMargin: "-15% 0px -70% 0px", threshold: [0, 0.25, 0.5, 1] }
-    );
-
-    ALL_IDS.forEach((id) => {
-      const el = document.getElementById(id);
-      if (el) observer.observe(el);
-    });
-
-    return () => observer.disconnect();
-  }, []);
-
   function goTo(id: string) {
-    document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    const targetTab = ID_TO_TAB[id];
+    if (targetTab && onSelectTab && activeTab !== "all" && activeTab !== targetTab) {
+      onSelectTab(targetTab);
+    }
+    setActive(id);
+    setTimeout(() => {
+      document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 50);
   }
 
   return (
