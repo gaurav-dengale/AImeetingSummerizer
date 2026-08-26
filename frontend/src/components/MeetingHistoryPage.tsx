@@ -5,6 +5,8 @@ import {
   Calendar,
   Trash2,
   ChevronRight,
+  ChevronDown,
+  ChevronUp,
   Sparkles,
   ListChecks,
   RefreshCw,
@@ -18,6 +20,8 @@ import { toast } from "sonner";
 import { api, ApiError, type MeetingSummaryItem, type MeetingDetail } from "../lib/api";
 import { cardHover, cardTap, listItem } from "../lib/variants";
 
+const INITIAL_VISIBLE_COUNT = 4;
+
 export default function MeetingHistoryPage() {
   const [meetings, setMeetings] = useState<MeetingSummaryItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -25,6 +29,7 @@ export default function MeetingHistoryPage() {
   const [selectedMeetingDetail, setSelectedMeetingDetail] = useState<MeetingDetail | null>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [showAll, setShowAll] = useState(false);
 
   const fetchMeetings = useCallback(async () => {
     try {
@@ -133,7 +138,7 @@ export default function MeetingHistoryPage() {
           ) : (
             <div className="space-y-3">
               <AnimatePresence>
-                {meetings.map((m) => {
+                {(showAll ? meetings : meetings.slice(0, INITIAL_VISIBLE_COUNT)).map((m) => {
                   const isSelected = selectedMeetingId === m.id;
                   const dateStr = new Date(m.created_at).toLocaleDateString(undefined, {
                     month: "short",
@@ -220,6 +225,28 @@ export default function MeetingHistoryPage() {
                   );
                 })}
               </AnimatePresence>
+
+              {/* See More / Show Less Button */}
+              {meetings.length > INITIAL_VISIBLE_COUNT && (
+                <div className="pt-2 flex items-center justify-center">
+                  <button
+                    onClick={() => setShowAll((prev) => !prev)}
+                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-xs font-semibold text-slate-200 transition-all hover:scale-[1.02] shadow-sm"
+                  >
+                    {showAll ? (
+                      <>
+                        <ChevronUp className="w-4 h-4 text-primary" />
+                        <span>Show Less</span>
+                      </>
+                    ) : (
+                      <>
+                        <ChevronDown className="w-4 h-4 text-primary" />
+                        <span>See More ({meetings.length - INITIAL_VISIBLE_COUNT} more meetings)</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>
