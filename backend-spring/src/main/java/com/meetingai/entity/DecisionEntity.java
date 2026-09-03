@@ -1,6 +1,7 @@
 package com.meetingai.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -43,6 +44,31 @@ public class DecisionEntity {
     private String provenanceHash;
 
     private String status = "verified"; // "verified" | "contested" | "superseded"
+
+    /** ID of the newer decision that supersedes this one (null if current) */
+    @Column(name = "superseded_by_id")
+    @JsonProperty("superseded_by_id")
+    private Long supersededById;
+
+    /** Provenance hash of the superseding decision for cryptographic chain linking */
+    @Column(name = "superseded_by_hash", length = 64)
+    @JsonProperty("superseded_by_hash")
+    private String supersededByHash;
+
+    /** Semantic similarity score (0-100) between this decision and the one that reversed it */
+    @Column(name = "reversal_similarity_score")
+    @JsonProperty("reversal_similarity_score")
+    private Integer reversalSimilarityScore;
+
+    /** AI-generated compact semantic fingerprint for cross-decision comparison */
+    @Column(name = "semantic_fingerprint", columnDefinition = "TEXT")
+    @JsonProperty("semantic_fingerprint")
+    private String semanticFingerprint;
+
+    /** ID of the original decision this one supersedes (null if original) */
+    @Column(name = "supersedes_id")
+    @JsonProperty("supersedes_id")
+    private Long supersedesId;
 
     @Column(name = "created_at")
     private Instant createdAt = Instant.now();
@@ -102,4 +128,14 @@ public class DecisionEntity {
     public void setStatus(String status) { this.status = status; }
     public Instant getCreatedAt() { return createdAt; }
     public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
+    public Long getSupersededById() { return supersededById; }
+    public void setSupersededById(Long supersededById) { this.supersededById = supersededById; }
+    public String getSupersededByHash() { return supersededByHash; }
+    public void setSupersededByHash(String supersededByHash) { this.supersededByHash = supersededByHash; }
+    public Integer getReversalSimilarityScore() { return reversalSimilarityScore; }
+    public void setReversalSimilarityScore(Integer reversalSimilarityScore) { this.reversalSimilarityScore = reversalSimilarityScore; }
+    public String getSemanticFingerprint() { return semanticFingerprint; }
+    public void setSemanticFingerprint(String semanticFingerprint) { this.semanticFingerprint = semanticFingerprint; }
+    public Long getSupersedesId() { return supersedesId; }
+    public void setSupersedesId(Long supersedesId) { this.supersedesId = supersedesId; }
 }

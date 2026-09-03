@@ -18,6 +18,7 @@ import AnalyticsDashboard from "./components/AnalyticsDashboard";
 import DigestSettingsCard from "./components/DigestSettingsCard";
 import BiDirectionalSyncCard from "./components/BiDirectionalSyncCard";
 import DecisionLedgerCard from "./components/DecisionLedgerCard";
+import DecisionReversalCard from "./components/DecisionReversalCard";
 import TemporalConflictCard from "./components/TemporalConflictCard";
 import AskAiDrawer from "./components/AskAiDrawer";
 import { Sparkles } from "lucide-react";
@@ -291,6 +292,11 @@ export default function App() {
               {/* Cryptographic Decision Ledger (ADR Engine) */}
               <motion.section id="decisions" variants={tileIn} className="col-span-12 scroll-mt-24">
                 <DecisionLedgerCard />
+              </motion.section>
+
+              {/* Decision Reversal & Supersession Tracker (Patent Feature #5) */}
+              <motion.section id="reversals" variants={tileIn} className="col-span-12 scroll-mt-24">
+                <DecisionReversalCard />
               </motion.section>
 
               {/* Cross-Meeting Temporal Constraint Graph (DAG Conflict Solver) */}

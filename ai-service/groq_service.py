@@ -221,7 +221,8 @@ Output valid JSON with this exact schema:
             "rationale": string,
             "consensus_score": integer 0-100,
             "approvers": [string],
-            "dissenters": [string]
+            "dissenters": [string],
+            "semantic_fingerprint": string
         }}
     ],
     "blockers_risks": [
@@ -270,7 +271,8 @@ Transcript:
                         "rationale":       d.get("rationale", ""),
                         "consensus_score": d.get("consensus_score", 85),
                         "approvers":       d.get("approvers", []),
-                        "dissenters":      d.get("dissenters", [])
+                        "dissenters":      d.get("dissenters", []),
+                        "semantic_fingerprint": d.get("semantic_fingerprint", "")
                     })
 
             for b in res.get("blockers_risks", []):

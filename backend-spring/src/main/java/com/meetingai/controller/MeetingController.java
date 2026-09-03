@@ -9,6 +9,7 @@ import com.meetingai.model.MeetingBotRequest;
 import com.meetingai.service.AiBridgeService;
 import com.meetingai.service.ContactsService;
 import com.meetingai.service.DatabaseService;
+import com.meetingai.service.DecisionReversalService;
 import com.meetingai.service.GoogleService;
 import com.meetingai.service.SlackService;
 import com.meetingai.service.VexaService;
@@ -40,6 +41,7 @@ public class MeetingController {
     private final AppProperties appProperties;
     private final ObjectMapper objectMapper;
     private final DatabaseService databaseService;
+    private final DecisionReversalService reversalService;
 
     @Value("${dispatch.confidence.auto.threshold:80}")
     private int confidenceThreshold;
@@ -49,7 +51,8 @@ public class MeetingController {
     public MeetingController(VexaService vexaService, AiBridgeService aiBridgeService,
                              SlackService slackService, GoogleService googleService,
                              ContactsService contactsService, AppProperties appProperties,
-                             ObjectMapper objectMapper, DatabaseService databaseService) {
+                             ObjectMapper objectMapper, DatabaseService databaseService,
+                             DecisionReversalService reversalService) {
         this.vexaService = vexaService;
         this.aiBridgeService = aiBridgeService;
         this.slackService = slackService;
@@ -58,6 +61,7 @@ public class MeetingController {
         this.appProperties = appProperties;
         this.objectMapper = objectMapper;
         this.databaseService = databaseService;
+        this.reversalService = reversalService;
     }
 
     @PostMapping(value = "/create_bot", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
@@ -231,8 +235,9 @@ public class MeetingController {
             }
         }
 
-        // Persist extracted decisions (Cryptographic Consensus Ledger)
+        // Persist extracted decisions (Cryptographic Consensus Ledger + Reversal Detection)
         Object decisionsObj = aiResults.get("decisions");
+        List<Map<String, Object>> reversalAlerts = new ArrayList<>();
         if (decisionsObj instanceof List<?> decisionsList) {
             for (Object decObj : decisionsList) {
                 if (!(decObj instanceof Map)) continue;
@@ -243,16 +248,48 @@ public class MeetingController {
                 int consensusScore = toInt(dec.get("consensus_score"), 85);
                 String approvers = String.valueOf(dec.getOrDefault("approvers", "[]"));
                 String dissenters = String.valueOf(dec.getOrDefault("dissenters", "[]"));
+                String semanticFingerprint = str(dec.get("semantic_fingerprint"));
 
                 if (decisionText != null && !decisionText.isBlank()) {
-                    var savedDec = databaseService.saveDecision(
+                    // Save with semantic fingerprint for reversal detection
+                    var savedDec = databaseService.saveDecisionWithFingerprint(
                         meeting, decisionText, category, rationale,
-                        consensusScore, approvers, dissenters
+                        consensusScore, approvers, dissenters, semanticFingerprint
                     );
                     dec.put("db_id", savedDec.getId());
                     dec.put("provenance_hash", savedDec.getProvenanceHash());
+
+                    // Run automated reversal detection against historical decisions
+                    try {
+                        var reversals = reversalService.detectReversals(
+                            decisionText, category, semanticFingerprint);
+                        if (!reversals.isEmpty()) {
+                            for (var rev : reversals) {
+                                Map<String, Object> alert = new java.util.LinkedHashMap<>();
+                                alert.put("new_decision_id", savedDec.getId());
+                                alert.put("new_decision", decisionText);
+                                alert.put("original_decision_id", rev.originalDecisionId());
+                                alert.put("original_decision", rev.originalDecision());
+                                alert.put("original_category", rev.originalCategory());
+                                alert.put("original_consensus_score", rev.originalConsensusScore());
+                                alert.put("original_provenance_hash", rev.originalProvenanceHash());
+                                alert.put("similarity_score", rev.similarityScore());
+                                alert.put("contradiction_confidence", rev.contradictionConfidence());
+                                alert.put("contradiction_reason", rev.contradictionReason());
+                                alert.put("suggested_action", rev.suggestedAction());
+                                reversalAlerts.add(alert);
+                            }
+                            log.info("[DecisionReversal] {} potential reversal(s) detected for: {}",
+                                    reversals.size(), decisionText);
+                        }
+                    } catch (Exception e) {
+                        log.warn("[DecisionReversal] Error during reversal detection: {}", e.getMessage());
+                    }
                 }
             }
+        }
+        if (!reversalAlerts.isEmpty()) {
+            aiResults.put("reversal_alerts", reversalAlerts);
         }
     }
 

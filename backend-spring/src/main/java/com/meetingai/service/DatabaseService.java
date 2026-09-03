@@ -226,6 +226,17 @@ public class DatabaseService {
         return decisionRepo.save(d);
     }
 
+    /** Save a decision with a semantic fingerprint for the Reversal Detection Engine */
+    public DecisionEntity saveDecisionWithFingerprint(MeetingEntity meeting, String decision,
+                                                       String category, String rationale,
+                                                       int consensusScore, String approvers,
+                                                       String dissenters, String semanticFingerprint) {
+        DecisionEntity d = new DecisionEntity(meeting, decision, category, rationale,
+                consensusScore, approvers, dissenters);
+        d.setSemanticFingerprint(semanticFingerprint);
+        return decisionRepo.save(d);
+    }
+
     @Transactional(readOnly = true)
     public List<DecisionEntity> getDecisionsForMeeting(Long meetingId) {
         return decisionRepo.findByMeetingIdOrderByCreatedAtDesc(meetingId);

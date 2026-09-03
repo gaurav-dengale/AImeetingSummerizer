@@ -115,6 +115,64 @@ export interface DecisionItem {
   provenance_hash?: string;
   status?: string;
   created_at?: string;
+  // Decision Reversal & Supersession fields
+  superseded_by_id?: number | null;
+  superseded_by_hash?: string | null;
+  reversal_similarity_score?: number | null;
+  semantic_fingerprint?: string | null;
+  supersedes_id?: number | null;
+}
+
+export interface ReversalCandidate {
+  originalDecisionId: number;
+  originalDecision: string;
+  originalCategory: string;
+  originalConsensusScore: number;
+  originalProvenanceHash: string;
+  originalCreatedAt: string;
+  originalStatus: string;
+  newDecision: string;
+  newCategory: string;
+  similarityScore: number;
+  contradictionConfidence: number;
+  contradictionReason: string;
+  suggestedAction: "supersede" | "coexist" | "clarify";
+}
+
+export interface ReversalAlert {
+  new_decision_id: number;
+  new_decision: string;
+  original_decision_id: number;
+  original_decision: string;
+  original_category: string;
+  original_consensus_score: number;
+  original_provenance_hash: string;
+  similarity_score: number;
+  contradiction_confidence: number;
+  contradiction_reason: string;
+  suggested_action: "supersede" | "coexist" | "clarify";
+}
+
+export interface StabilityIndex {
+  stability_index: number;
+  total_decisions: number;
+  verified_count: number;
+  superseded_count: number;
+  contested_count: number;
+  reversal_rate: number;
+  category_breakdown: Record<string, number>;
+  superseded_by_category: Record<string, number>;
+}
+
+export interface SupersessionChainLink {
+  id: number;
+  decision: string;
+  category: string;
+  status: string;
+  consensus_score: number;
+  provenance_hash: string;
+  created_at: string;
+  reversal_similarity_score?: number | null;
 }
 
 export interface TaskConflict {
@@ -348,6 +406,42 @@ export const api = {
       body: JSON.stringify({ hash }),
     }),
 
+  // ── Decision Reversal & Supersession Tracker (Patent Feature #5) ──
+  detectReversals: (decision: string, category?: string, semanticFingerprint?: string) =>
+    request<{
+      reversals_detected: boolean;
+      count: number;
+      candidates: ReversalCandidate[];
+    }>("/api/decisions/detect-reversals", {
+      method: "POST",
+      body: JSON.stringify({ decision, category, semantic_fingerprint: semanticFingerprint }),
+    }),
+  supersedeDecision: (originalDecisionId: number, newDecisionId: number) =>
+    request<{
+      success: boolean;
+      action: string;
+      original_decision_id: number;
+      new_decision_id: number;
+      original_hash: string;
+      new_hash: string;
+      message: string;
+    }>("/api/decisions/supersede", {
+      method: "POST",
+      body: JSON.stringify({ originalDecisionId, newDecisionId }),
+    }),
+  markDecisionsCoexisting: (decisionId1: number, decisionId2: number) =>
+    request<{ success: boolean; action: string; message: string }>("/api/decisions/coexist", {
+      method: "POST",
+      body: JSON.stringify({ decisionId1, decisionId2 }),
+    }),
+  getStabilityIndex: () => request<StabilityIndex>("/api/decisions/stability"),
+  getSupersessionChain: (id: number) =>
+    request<{
+      decision_id: number;
+      chain_length: number;
+      chain: SupersessionChainLink[];
+    }>(`/api/decisions/${id}/chain`),
+
   // ── Cross-Meeting Temporal Conflict Solver ──
   getConflicts: () => request<TaskConflict[]>("/api/conflicts"),
   resolveConflict: (taskId: number, newDueDate: string) =>
@@ -367,5 +461,3 @@ export const api = {
       body: JSON.stringify({ query, meetingId }),
     }),
 };
-
-
