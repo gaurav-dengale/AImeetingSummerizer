@@ -18,7 +18,7 @@
 
 @layer components {
   .glass-card {
-    @apply bg-surface backdrop-blur-2xl border border-border rounded-3xl p-6 shadow-glow
+    @apply bg-surface backdrop-blur-2xl border border-border rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-glow
            transition-colors duration-200 hover:border-white/15;
   }
 
@@ -112,3 +112,12 @@ select:focus-visible {
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.22);
 }
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+

@@ -55,6 +55,7 @@ export default function App() {
 
   const [pendingReviewCount, setPendingReviewCount] = useState(0);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
 
   // Onboarding — show modal on first ever visit
@@ -205,6 +206,8 @@ export default function App() {
         onOpenAskAi={() => setAskAiOpen(true)}
         activeTab={activeTab}
         onSelectTab={setActiveTab}
+        mobileOpen={mobileSidebarOpen}
+        onCloseMobile={() => setMobileSidebarOpen(false)}
       />
 
       <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
@@ -217,17 +220,56 @@ export default function App() {
         animate={{ scale: 1, opacity: 1 }}
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
-        className="fixed bottom-6 right-6 z-40 flex items-center gap-2 px-4 py-2.5 rounded-full bg-brand-gradient text-white text-xs font-semibold shadow-xl shadow-brand-purple/25 border border-white/20 backdrop-blur-lg hover:shadow-brand-purple/40 transition-shadow"
+        className="fixed bottom-20 md:bottom-6 right-3.5 sm:right-6 z-40 flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-full bg-brand-gradient text-white text-xs font-semibold shadow-xl shadow-brand-purple/25 border border-white/20 backdrop-blur-lg hover:shadow-brand-purple/40 transition-shadow"
       >
-        <Sparkles className="w-4 h-4 animate-pulse text-amber-300" />
-        <span>Ask AI Memory</span>
+        <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-pulse text-amber-300" />
+        <span className="hidden sm:inline">Ask AI Memory</span>
+        <span className="sm:hidden">Ask AI</span>
       </motion.button>
+
+      {/* Mobile Bottom Tab Navigation */}
+      <nav className="fixed bottom-0 left-0 right-0 z-30 md:hidden bg-base/95 backdrop-blur-2xl border-t border-border px-2 py-1 flex items-center justify-around shadow-2xl">
+        {[
+          { id: "studio" as const, label: "Studio", icon: "🎙️" },
+          { id: "intelligence" as const, label: "Intel", icon: "🧠", badge: pendingReviewCount > 0 ? pendingReviewCount : undefined },
+          { id: "history" as const, label: "History", icon: "📊" },
+          { id: "integrations" as const, label: "Settings", icon: "⚙️" },
+          { id: "all" as const, label: "All", icon: "🌐" },
+        ].map((tab) => {
+          const isActive = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`relative flex flex-col items-center justify-center py-1 px-3 rounded-xl text-[10px] font-semibold transition-all ${
+                isActive ? "text-white" : "text-ink-muted hover:text-ink-main"
+              }`}
+            >
+              {isActive && (
+                <motion.div
+                  layoutId="mobile-bottom-pill"
+                  className="absolute inset-0 rounded-xl bg-white/10 border border-white/10 shadow-sm"
+                  transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                />
+              )}
+              <span className="text-sm leading-none relative z-10">{tab.icon}</span>
+              <span className="mt-0.5 relative z-10 leading-tight">{tab.label}</span>
+              {tab.badge && (
+                <span className="absolute -top-1 -right-0.5 min-w-3.5 h-3.5 px-0.5 rounded-full bg-rose-500 text-white text-[8px] font-bold flex items-center justify-center">
+                  {tab.badge}
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </nav>
 
       <div className="flex-1 min-w-0">
         <Topbar
           status={status}
           statusError={statusError}
           onOpenTour={() => setOnboardingOpen(true)}
+          onToggleMobileSidebar={() => setMobileSidebarOpen((o) => !o)}
         />
 
         {/* Main Content Grid */}
@@ -235,7 +277,7 @@ export default function App() {
           variants={staggerContainer}
           initial="hidden"
           animate="show"
-          className="max-w-[1400px] mx-auto px-6 py-6 grid grid-cols-12 gap-6"
+          className="max-w-[1400px] mx-auto px-3.5 sm:px-6 py-4 sm:py-6 pb-24 md:pb-8 grid grid-cols-12 gap-4 sm:gap-6"
         >
           {/* TAB 1: LIVE STUDIO */}
           {(activeTab === "studio" || activeTab === "all") && (
