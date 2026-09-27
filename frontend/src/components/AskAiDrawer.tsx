@@ -8,7 +8,6 @@ import {
   CheckCircle,
   HelpCircle,
   BrainCircuit,
-  RefreshCw,
 } from "lucide-react";
 import { api, type AskAiResponse } from "../lib/api";
 

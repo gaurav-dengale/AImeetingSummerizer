@@ -186,14 +186,6 @@ export default function App() {
     setSegments(live);
   }
 
-  const tabs: Array<{ id: WorkspaceTab; label: string; icon: string; badge?: number }> = [
-    { id: "studio", label: "Live Studio", icon: "🎙️" },
-    { id: "intelligence", label: "Intelligence & ADR", icon: "🧠", badge: pendingReviewCount > 0 ? pendingReviewCount : undefined },
-    { id: "history", label: "History & Analytics", icon: "📊" },
-    { id: "integrations", label: "Integrations & Settings", icon: "⚙️" },
-    { id: "all", label: "All Views", icon: "🌐" },
-  ];
-
   return (
     <div className="flex min-h-screen">
       <AuroraBackground />

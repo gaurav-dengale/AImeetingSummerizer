@@ -1,7 +1,7 @@
-﻿import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   CheckCircle2, Circle, ChevronRight, X, Rocket,
-  CalendarCheck, Users, Mic, HelpCircle
+  Mic, HelpCircle
 } from "lucide-react";
 import type { StatusResponse } from "../lib/api";
 

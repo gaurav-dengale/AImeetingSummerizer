@@ -1,8 +1,8 @@
-﻿import { useState } from "react";
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Sparkles, X, CheckCircle2, Circle, ArrowRight, ArrowLeft,
-  Mic, Video, CalendarCheck, Users, Zap, ChevronRight
+  Sparkles, X, ArrowRight, ArrowLeft,
+  Mic, Video, CalendarCheck, Users, Zap, ChevronRight, Settings
 } from "lucide-react";
 
 interface Props {
@@ -305,20 +305,30 @@ export default function OnboardingModal({ onClose, onGoToSettings }: Props) {
               <ArrowLeft className="w-4 h-4" /> Back
             </button>
 
-            <button
-              onClick={handleNext}
-              className="btn-primary flex items-center gap-2"
-            >
-              {isLast ? (
-                <>
-                  <Sparkles className="w-4 h-4" /> Start Using MeetIQ
-                </>
-              ) : (
-                <>
-                  Next <ArrowRight className="w-4 h-4" />
-                </>
+            <div className="flex items-center gap-3">
+              {isLast && (
+                <button
+                  onClick={onGoToSettings}
+                  className="btn-secondary text-xs flex items-center gap-1.5"
+                >
+                  <Settings className="w-3.5 h-3.5" /> Open Integrations
+                </button>
               )}
-            </button>
+              <button
+                onClick={handleNext}
+                className="btn-primary flex items-center gap-2"
+              >
+                {isLast ? (
+                  <>
+                    <Sparkles className="w-4 h-4" /> Start Using MeetIQ
+                  </>
+                ) : (
+                  <>
+                    Next <ArrowRight className="w-4 h-4" />
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </motion.div>
       </motion.div>

@@ -185,7 +185,7 @@ export default function BotControlCard({ onResult }: Props) {
               Fetch &amp; Analyze
             </MagneticButton>
             <button className="btn-danger" onClick={handleStop} disabled={busy}>
-              {botState === "stopping" ? <Loader2 className="w-4 h-4 animate-spin" /> : <Square className="w-4 h-4" />}
+              <Square className="w-4 h-4" />
               Stop Bot
             </button>
           </>

@@ -11,8 +11,6 @@ import {
   RotateCw,
   Link as LinkIcon,
   Flame,
-  ShieldCheck,
-  ShieldAlert
 } from "lucide-react";
 import { toast } from "sonner";
 import { api, ApiError, type TaskItem } from "../lib/api";
