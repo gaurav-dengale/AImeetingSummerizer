@@ -23,6 +23,7 @@ import TemporalConflictCard from "./components/TemporalConflictCard";
 import AskAiDrawer from "./components/AskAiDrawer";
 import OnboardingModal from "./components/OnboardingModal";
 import GettingStartedCard from "./components/GettingStartedCard";
+import ErrorBoundary from "./components/ErrorBoundary";
 import { Sparkles } from "lucide-react";
 
 import { api, type AiResult, type Segment, type StatusResponse, type TranscriptResponse } from "./lib/api";
@@ -228,7 +229,7 @@ export default function App() {
       </motion.button>
 
       {/* Mobile Bottom Tab Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 z-30 md:hidden bg-base/95 backdrop-blur-2xl border-t border-border px-2 py-1 flex items-center justify-around shadow-2xl">
+      <nav className="fixed bottom-0 left-0 right-0 z-30 md:hidden bg-base/95 backdrop-blur-2xl border-t border-border px-2 py-1.5 flex items-center justify-around shadow-2xl safe-area-pb">
         {[
           { id: "studio" as const, label: "Studio", icon: "🎙️" },
           { id: "intelligence" as const, label: "Intel", icon: "🧠", badge: pendingReviewCount > 0 ? pendingReviewCount : undefined },
@@ -240,20 +241,20 @@ export default function App() {
           return (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`relative flex flex-col items-center justify-center py-1 px-3 rounded-xl text-[10px] font-semibold transition-all ${
-                isActive ? "text-white" : "text-ink-muted hover:text-ink-main"
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                setActiveTab(tab.id);
+                window.scrollTo({ top: 0, behavior: "smooth" });
+              }}
+              className={`relative flex flex-col items-center justify-center py-1 px-3 rounded-xl text-[10px] font-semibold transition-all touch-manipulation select-none ${
+                isActive
+                  ? "text-white bg-white/10 border border-white/15"
+                  : "text-ink-muted hover:text-ink-main border border-transparent"
               }`}
             >
-              {isActive && (
-                <motion.div
-                  layoutId="mobile-bottom-pill"
-                  className="absolute inset-0 rounded-xl bg-white/10 border border-white/10 shadow-sm"
-                  transition={{ type: "spring", stiffness: 400, damping: 30 }}
-                />
-              )}
-              <span className="text-sm leading-none relative z-10">{tab.icon}</span>
-              <span className="mt-0.5 relative z-10 leading-tight">{tab.label}</span>
+              <span className="text-sm leading-none">{tab.icon}</span>
+              <span className="mt-0.5 leading-tight">{tab.label}</span>
               {tab.badge && (
                 <span className="absolute -top-1 -right-0.5 min-w-3.5 h-3.5 px-0.5 rounded-full bg-rose-500 text-white text-[8px] font-bold flex items-center justify-center">
                   {tab.badge}
@@ -272,8 +273,9 @@ export default function App() {
           onToggleMobileSidebar={() => setMobileSidebarOpen((o) => !o)}
         />
 
-        {/* Main Content Grid */}
+        {/* Main Content Grid — keyed by activeTab so animations cleanly re-trigger without opacity bugs */}
         <motion.main
+          key={activeTab}
           variants={staggerContainer}
           initial="hidden"
           animate="show"
@@ -281,7 +283,7 @@ export default function App() {
         >
           {/* TAB 1: LIVE STUDIO */}
           {(activeTab === "studio" || activeTab === "all") && (
-            <>
+            <ErrorBoundary fallbackTitle="Live Studio Error">
               {/* Getting Started Checklist — shown until fully set up or dismissed */}
               {!checklistDismissed && (
                 <motion.section variants={tileIn} className="col-span-12">
@@ -328,12 +330,12 @@ export default function App() {
               <motion.div id="calendar" variants={tileIn} className="col-span-12 lg:col-span-4 scroll-mt-24">
                 <CalendarCard event={aiResult?.scheduled_event} />
               </motion.div>
-            </>
+            </ErrorBoundary>
           )}
 
           {/* TAB 2: INTELLIGENCE & ADR */}
           {(activeTab === "intelligence" || activeTab === "all") && (
-            <>
+            <ErrorBoundary fallbackTitle="Intelligence & ADR Error">
               {/* Cryptographic Decision Ledger (ADR Engine) */}
               <motion.section id="decisions" variants={tileIn} className="col-span-12 scroll-mt-24">
                 <DecisionLedgerCard />
@@ -353,12 +355,12 @@ export default function App() {
               <motion.section id="review" variants={tileIn} className="col-span-12 scroll-mt-24">
                 <TaskReviewPanel onTasksChanged={refreshStatus} />
               </motion.section>
-            </>
+            </ErrorBoundary>
           )}
 
           {/* TAB 3: HISTORY & ANALYTICS */}
           {(activeTab === "history" || activeTab === "all") && (
-            <>
+            <ErrorBoundary fallbackTitle="History & Analytics Error">
               {/* Persistent Meeting History (#1) */}
               <motion.section id="history" variants={tileIn} className="col-span-12 scroll-mt-24">
                 <MeetingHistoryPage />
@@ -368,12 +370,12 @@ export default function App() {
               <motion.section id="analytics" variants={tileIn} className="col-span-12 scroll-mt-24">
                 <AnalyticsDashboard />
               </motion.section>
-            </>
+            </ErrorBoundary>
           )}
 
           {/* TAB 4: INTEGRATIONS & SETTINGS */}
           {(activeTab === "integrations" || activeTab === "all") && (
-            <>
+            <ErrorBoundary fallbackTitle="Integrations & Settings Error">
               {/* Manual Dispatcher */}
               <motion.div id="dispatcher" variants={tileIn} className="col-span-12 lg:col-span-6 scroll-mt-24">
                 <ManualDispatcherCard />
@@ -393,7 +395,7 @@ export default function App() {
               <motion.section id="settings" variants={tileIn} className="col-span-12 scroll-mt-24">
                 <SettingsCard vexaBaseUrl={status?.vexaBaseUrl} onSaved={refreshStatus} />
               </motion.section>
-            </>
+            </ErrorBoundary>
           )}
         </motion.main>
       </div>
