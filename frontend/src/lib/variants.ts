@@ -23,7 +23,7 @@ export const tileIn: Variants = {
 };
 
 /** Card hover/tap micro-interaction — spread onto whileHover/whileTap. */
-export const cardHover = { y: -6, transition: springy };
+export const cardHover = { y: -3, transition: springy };
 export const cardTap = { scale: 0.985, transition: springy };
 
 /** List item enter/exit for AnimatePresence-driven lists (transcript, tasks). */

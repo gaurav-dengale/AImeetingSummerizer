@@ -21,6 +21,8 @@ import DecisionLedgerCard from "./components/DecisionLedgerCard";
 import DecisionReversalCard from "./components/DecisionReversalCard";
 import TemporalConflictCard from "./components/TemporalConflictCard";
 import AskAiDrawer from "./components/AskAiDrawer";
+import OnboardingModal from "./components/OnboardingModal";
+import GettingStartedCard from "./components/GettingStartedCard";
 import { Sparkles } from "lucide-react";
 
 import { api, type AiResult, type Segment, type StatusResponse, type TranscriptResponse } from "./lib/api";
@@ -54,6 +56,25 @@ export default function App() {
   const [pendingReviewCount, setPendingReviewCount] = useState(0);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
+
+  // Onboarding — show modal on first ever visit
+  const [onboardingOpen, setOnboardingOpen] = useState(() => {
+    try { return !localStorage.getItem("meetingai_onboarded"); } catch { return false; }
+  });
+  // Getting started checklist — dismiss independently from onboarding
+  const [checklistDismissed, setChecklistDismissed] = useState(() => {
+    try { return localStorage.getItem("meetingai_checklist_dismissed") === "true"; } catch { return false; }
+  });
+
+  function closeOnboarding() {
+    setOnboardingOpen(false);
+    try { localStorage.setItem("meetingai_onboarded", "true"); } catch {}
+  }
+
+  function dismissChecklist() {
+    setChecklistDismissed(true);
+    try { localStorage.setItem("meetingai_checklist_dismissed", "true"); } catch {}
+  }
 
   const refreshStatus = useCallback(async () => {
     try {
@@ -177,6 +198,14 @@ export default function App() {
     <div className="flex min-h-screen">
       <AuroraBackground />
 
+      {/* Onboarding welcome tour */}
+      {onboardingOpen && (
+        <OnboardingModal
+          onClose={closeOnboarding}
+          onGoToSettings={() => { closeOnboarding(); setActiveTab("integrations"); }}
+        />
+      )}
+
       <Sidebar
         collapsed={sidebarCollapsed}
         onToggleCollapsed={() => setSidebarCollapsed((c) => !c)}
@@ -203,43 +232,13 @@ export default function App() {
       </motion.button>
 
       <div className="flex-1 min-w-0">
-        <Topbar status={status} statusError={statusError} />
+        <Topbar
+          status={status}
+          statusError={statusError}
+          onOpenTour={() => setOnboardingOpen(true)}
+        />
 
-        {/* Workspace Segmented Tab Switcher */}
-        <div className="max-w-[1400px] mx-auto px-6 pt-6 pb-2">
-          <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-white/[0.03] border border-white/10 backdrop-blur-xl overflow-x-auto">
-            {tabs.map((tab) => {
-              const isActive = activeTab === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`relative flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
-                    isActive
-                      ? "text-white shadow-lg shadow-black/40"
-                      : "text-ink-muted hover:text-white hover:bg-white/[0.04]"
-                  }`}
-                >
-                  {isActive && (
-                    <motion.div
-                      layoutId="active-tab-indicator"
-                      className="absolute inset-0 rounded-xl bg-gradient-to-r from-brand-purple/30 via-brand-blue/30 to-brand-purple/20 border border-brand-purple/40"
-                      transition={{ type: "spring", stiffness: 400, damping: 30 }}
-                    />
-                  )}
-                  <span className="relative z-10">{tab.icon}</span>
-                  <span className="relative z-10">{tab.label}</span>
-                  {tab.badge !== undefined && (
-                    <span className="relative z-10 text-[10px] font-mono px-1.5 py-0.2 rounded-full bg-rose-500 text-white">
-                      {tab.badge}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
+        {/* Main Content Grid */}
         <motion.main
           variants={staggerContainer}
           initial="hidden"
@@ -249,6 +248,18 @@ export default function App() {
           {/* TAB 1: LIVE STUDIO */}
           {(activeTab === "studio" || activeTab === "all") && (
             <>
+              {/* Getting Started Checklist — shown until fully set up or dismissed */}
+              {!checklistDismissed && (
+                <motion.section variants={tileIn} className="col-span-12">
+                  <GettingStartedCard
+                    status={status}
+                    onDismiss={dismissChecklist}
+                    onShowOnboarding={() => setOnboardingOpen(true)}
+                    onGoToSettings={() => setActiveTab("integrations")}
+                  />
+                </motion.section>
+              )}
+
               {/* Overview Hero & Summary */}
               <motion.section id="overview" variants={tileIn} className="col-span-12 scroll-mt-24">
                 <OverviewHero

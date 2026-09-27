@@ -187,7 +187,7 @@ export default function Sidebar({
                     {isActive && (
                       <motion.div
                         layoutId="sidebar-active-pill"
-                        className="absolute inset-0 rounded-lg bg-white/10 border border-white/10"
+                        className="absolute inset-0 rounded-lg bg-gradient-to-r from-primary/20 via-indigo/20 to-violet/20 border border-primary/25 shadow-glow-primary"
                         transition={{ type: "spring", stiffness: 380, damping: 32 }}
                       />
                     )}

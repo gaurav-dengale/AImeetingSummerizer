@@ -8,11 +8,11 @@ import {
   Users,
   Calendar,
   ShieldAlert,
-  Loader2,
   RefreshCw
 } from "lucide-react";
 import { api, type AnalyticsData } from "../lib/api";
 import { cardHover, cardTap } from "../lib/variants";
+import { SkeletonKpiGrid, SkeletonText } from "./Skeleton";
 
 export default function AnalyticsDashboard() {
   const [data, setData] = useState<AnalyticsData | null>(null);
@@ -60,9 +60,12 @@ export default function AnalyticsDashboard() {
       </div>
 
       {loading ? (
-        <div className="glass-card py-16 flex flex-col items-center justify-center text-slate-400">
-          <Loader2 className="w-6 h-6 animate-spin mb-2" />
-          <p className="text-sm">Calculating intelligence metrics...</p>
+        <div className="space-y-6">
+          <SkeletonKpiGrid count={4} />
+          <div className="glass-card p-6 space-y-4">
+            <SkeletonText lines={1} className="w-1/4" />
+            <SkeletonText lines={3} />
+          </div>
         </div>
       ) : (
         <div className="grid grid-cols-12 gap-6">
@@ -111,53 +114,87 @@ export default function AnalyticsDashboard() {
             <p className="text-[11px] text-ink-muted mt-2">Awaiting human sign-off</p>
           </motion.div>
 
-          {/* Top Assignees Leaderboard */}
+          {/* Top Assignees — animated SVG bar chart + leaderboard */}
           <div className="glass-card col-span-12 lg:col-span-8 p-6">
             <div className="flex items-center justify-between mb-5">
               <h3 className="text-base font-bold flex items-center gap-2">
-                <Users className="w-4 h-4 text-primary" /> Team Task Distribution &amp; Completion
+                <Users className="w-4 h-4 text-primary" /> Team Task Distribution
               </h3>
               <span className="text-xs text-ink-muted">Sorted by task volume</span>
             </div>
 
             {!data?.top_assignees || data.top_assignees.length === 0 ? (
-              <div className="text-center py-10 text-slate-500 italic text-sm">
-                No team assignments tracked yet.
+              <div className="flex flex-col items-center justify-center py-10 gap-3 text-center">
+                <div className="w-12 h-12 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center">
+                  <Users className="w-6 h-6 text-primary/40" />
+                </div>
+                <div>
+                  <p className="text-slate-300 font-semibold text-sm">No team data yet</p>
+                  <p className="text-ink-muted text-xs mt-1">Run your first meeting to see assignee analytics.</p>
+                </div>
               </div>
             ) : (
-              <div className="space-y-3">
-                {data.top_assignees.map((person, idx) => {
-                  const rate = person.total > 0 ? Math.round((person.done * 100) / person.total) : 0;
-                  return (
-                    <div
-                      key={person.assignee || idx}
-                      className="bg-slate-800/40 border border-white/[0.04] rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
-                    >
-                      <div className="flex items-center gap-3 min-w-[140px]">
-                        <div className="w-8 h-8 rounded-full bg-primary/20 text-primary font-bold flex items-center justify-center text-xs">
-                          {person.assignee?.slice(0, 2).toUpperCase() || "??"}
-                        </div>
-                        <div>
-                          <p className="text-sm font-bold text-slate-200">{person.assignee || "Unassigned"}</p>
-                          <p className="text-[11px] text-ink-muted">{person.total} total assigned</p>
-                        </div>
-                      </div>
-
-                      <div className="flex-1 max-w-xs">
-                        <div className="flex items-center justify-between text-xs mb-1">
-                          <span className="text-ink-muted">Completion</span>
-                          <span className="font-semibold text-slate-200">{rate}% ({person.done}/{person.total})</span>
-                        </div>
-                        <div className="w-full bg-slate-900 rounded-full h-1.5 overflow-hidden">
-                          <div
-                            className="bg-primary h-1.5 rounded-full"
-                            style={{ width: `${rate}%` }}
+              <div className="space-y-4">
+                {/* SVG Bar Chart */}
+                <div className="flex items-end gap-2 h-28 px-1">
+                  {data.top_assignees.slice(0, 8).map((person, idx) => {
+                    const maxTotal = Math.max(...data.top_assignees.map((p) => p.total), 1);
+                    const totalPct = (person.total / maxTotal) * 100;
+                    const donePct = person.total > 0 ? (person.done / person.total) * 100 : 0;
+                    return (
+                      <div key={idx} className="flex-1 flex flex-col items-center gap-1.5">
+                        <div className="w-full relative flex items-end rounded-t-lg overflow-hidden" style={{ height: "80px" }}>
+                          {/* Background bar */}
+                          <motion.div
+                            className="absolute bottom-0 left-0 right-0 bg-slate-800/80 rounded-t-lg"
+                            initial={{ height: 0 }}
+                            animate={{ height: `${totalPct}%` }}
+                            transition={{ duration: 0.6, delay: idx * 0.05, ease: "easeOut" }}
+                          />
+                          {/* Done overlay */}
+                          <motion.div
+                            className="absolute bottom-0 left-0 right-0 bg-primary/50 rounded-t-lg"
+                            initial={{ height: 0 }}
+                            animate={{ height: `${(totalPct * donePct) / 100}%` }}
+                            transition={{ duration: 0.7, delay: idx * 0.05 + 0.2, ease: "easeOut" }}
                           />
                         </div>
+                        <p className="text-[9px] text-ink-muted truncate w-full text-center">
+                          {person.assignee?.split(" ")[0] ?? "?"}
+                        </p>
+                        <p className="text-[9px] font-bold text-slate-300">{person.total}</p>
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
+                {/* Legend */}
+                <div className="flex items-center gap-4 text-[10px] text-ink-muted">
+                  <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-slate-700" />Total</span>
+                  <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-primary/50" />Completed</span>
+                </div>
+                {/* Leaderboard */}
+                <div className="space-y-2 pt-2 border-t border-white/5">
+                  {data.top_assignees.map((person, idx) => {
+                    const rate = person.total > 0 ? Math.round((person.done * 100) / person.total) : 0;
+                    return (
+                      <div key={person.assignee || idx} className="flex items-center gap-3">
+                        <div className="w-6 h-6 rounded-full bg-primary/20 text-primary font-bold flex items-center justify-center text-[10px] shrink-0">
+                          {person.assignee?.slice(0, 2).toUpperCase() || "??"}
+                        </div>
+                        <p className="text-xs font-semibold text-slate-200 w-24 truncate shrink-0">{person.assignee || "Unassigned"}</p>
+                        <div className="flex-1 bg-slate-900 rounded-full h-1.5 overflow-hidden">
+                          <motion.div
+                            className="bg-primary h-1.5 rounded-full"
+                            initial={{ width: 0 }}
+                            animate={{ width: `${rate}%` }}
+                            transition={{ duration: 0.6, delay: idx * 0.06 }}
+                          />
+                        </div>
+                        <span className="text-[10px] text-ink-muted shrink-0">{rate}% ({person.done}/{person.total})</span>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             )}
           </div>

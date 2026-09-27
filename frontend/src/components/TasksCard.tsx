@@ -157,12 +157,18 @@ export default function TasksCard({ tasks, onTaskUpdated }: Props) {
       </div>
 
       {filteredTasks.length === 0 ? (
-        <div className="text-slate-500 italic text-sm py-4 text-center">
-          {filter === "all"
-            ? "No tasks detected yet. Transcribe meeting speech to trigger Groq LLM extraction."
-            : filter === "pending"
-            ? "All tasks completed! 🎉"
-            : "No completed tasks yet. Check off a task when finished."}
+        <div className="flex flex-col items-center justify-center py-10 gap-3 text-center">
+          <div className="w-12 h-12 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center">
+            <ListChecks className="w-6 h-6 text-primary/50" />
+          </div>
+          <div>
+            <p className="text-slate-300 font-semibold text-sm">
+              {filter === "all" ? "No tasks extracted yet" : filter === "pending" ? "All tasks completed! 🎉" : "No completed tasks yet"}
+            </p>
+            <p className="text-ink-muted text-xs mt-1">
+              {filter === "all" ? "Transcribe meeting speech to trigger Groq LLM extraction." : ""}
+            </p>
+          </div>
         </div>
       ) : (
         <div className="space-y-3">
@@ -184,12 +190,16 @@ export default function TasksCard({ tasks, onTaskUpdated }: Props) {
                   initial="hidden"
                   animate="show"
                   exit="exit"
-                  className={`border rounded-2xl px-5 py-4 transition-all duration-200 ${
+                  className={`border rounded-2xl px-5 py-4 transition-all duration-200 border-l-[3px] ${
                     isDone
-                      ? "bg-slate-900/30 border-emerald-500/20 opacity-75"
+                      ? "bg-slate-900/30 border-emerald-500/20 border-l-emerald-500/40 opacity-75"
                       : isPendingReview
-                      ? "bg-amber-950/20 border-amber-500/30"
-                      : "bg-slate-800/40 border-white/[0.06]"
+                      ? "bg-amber-950/20 border-amber-500/30 border-l-amber-500"
+                      : priority === "critical"
+                      ? "bg-slate-800/40 border-white/[0.06] border-l-rose-500"
+                      : priority === "low"
+                      ? "bg-slate-800/40 border-white/[0.06] border-l-slate-600"
+                      : "bg-slate-800/40 border-white/[0.06] border-l-blue-500"
                   }`}
                 >
                   <div className="flex flex-wrap items-start justify-between gap-4">
@@ -231,24 +241,22 @@ export default function TasksCard({ tasks, onTaskUpdated }: Props) {
                             {priority}
                           </span>
 
-                          {/* Confidence Score (#12 Confidence-Gated) */}
-                          <span
-                            className={`text-[10px] font-semibold px-2 py-0.5 rounded-full flex items-center gap-1 ${
-                              confidence >= 80
-                                ? "bg-emerald-500/15 text-emerald-300 border border-emerald-500/30"
-                                : confidence >= 50
-                                ? "bg-amber-500/15 text-amber-300 border border-amber-500/30"
-                                : "bg-rose-500/15 text-rose-300 border border-rose-500/30"
-                            }`}
-                            title={`AI Confidence: ${confidence}%`}
-                          >
-                            {confidence >= 80 ? (
-                              <ShieldCheck className="w-3 h-3 text-emerald-400" />
-                            ) : (
-                              <ShieldAlert className="w-3 h-3 text-amber-400" />
-                            )}
-                            {confidence}% conf
-                          </span>
+                          {/* Confidence Score — mini progress bar */}
+                          <div className="flex items-center gap-1.5" title={`AI Confidence: ${confidence}%`}>
+                            <div className="w-16 bg-slate-800 rounded-full h-1.5 overflow-hidden">
+                              <motion.div
+                                className={`h-1.5 rounded-full ${
+                                  confidence >= 80 ? "bg-emerald-500" : confidence >= 50 ? "bg-amber-500" : "bg-rose-500"
+                                }`}
+                                initial={{ width: 0 }}
+                                animate={{ width: `${confidence}%` }}
+                                transition={{ duration: 0.6, ease: "easeOut" }}
+                              />
+                            </div>
+                            <span className={`text-[10px] font-semibold ${
+                              confidence >= 80 ? "text-emerald-400" : confidence >= 50 ? "text-amber-400" : "text-rose-400"
+                            }`}>{confidence}%</span>
+                          </div>
 
                           {/* Cross-Meeting Link (#13) */}
                           {t.linked_task_id && (

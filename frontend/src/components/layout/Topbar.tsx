@@ -1,13 +1,14 @@
-import { CalendarCheck, Cpu, MessageSquare, Users, Wifi, WifiOff } from "lucide-react";
+import { CalendarCheck, Cpu, HelpCircle, MessageSquare, Users, Wifi, WifiOff } from "lucide-react";
 import type { StatusResponse } from "../../lib/api";
 import { usePulseOnChange } from "../../lib/usePulse";
 
 interface Props {
   status: StatusResponse | null;
   statusError: boolean;
+  onOpenTour?: () => void;
 }
 
-export default function Topbar({ status, statusError }: Props) {
+export default function Topbar({ status, statusError, onOpenTour }: Props) {
   const aiUp = status?.aiServiceHealth?.status === "UP";
   const contactsCount = status?.contactsCount ?? 0;
 
@@ -24,7 +25,7 @@ export default function Topbar({ status, statusError }: Props) {
         <p className="text-ink-muted text-xs mt-1">Spring Boot :8080 &middot; FastAPI AI engine :5001</p>
       </div>
 
-      <div className="flex flex-wrap gap-2.5">
+      <div className="flex flex-wrap items-center gap-2.5">
         <span ref={backendScope} className={`badge transition-colors duration-300 ${statusError ? "badge-warn" : "badge-active"}`}>
           {statusError ? <WifiOff className="w-3.5 h-3.5" /> : <Wifi className="w-3.5 h-3.5" />}
           Backend
@@ -45,6 +46,17 @@ export default function Topbar({ status, statusError }: Props) {
           <Users className="w-3.5 h-3.5" />
           {contactsCount} Contacts
         </span>
+
+        {onOpenTour && (
+          <button
+            onClick={onOpenTour}
+            className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl bg-white/[0.06] border border-border text-ink-muted hover:text-white hover:bg-white/10 transition-colors"
+            title="Open Getting Started tour"
+          >
+            <HelpCircle className="w-3.5 h-3.5" />
+            Tour
+          </button>
+        )}
       </div>
     </div>
   );

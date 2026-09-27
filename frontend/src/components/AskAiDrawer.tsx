@@ -32,7 +32,7 @@ export default function AskAiDrawer({ isOpen, onClose, meetingId }: Props) {
     try {
       const res = await api.askMeetingAi(q, meetingId);
       setResponse(res);
-      setHistory((prev) => [{ query: q, response: res }, ...prev]);
+      setHistory((prev) => [...prev, { query: q, response: res }]);
       if (!userQuery) setQuery("");
     } catch (err) {
       console.error("Ask AI error:", err);
@@ -119,9 +119,17 @@ export default function AskAiDrawer({ isOpen, onClose, meetingId }: Props) {
 
               {/* Active response */}
               {loading ? (
-                <div className="p-8 text-center text-xs text-ink-muted flex items-center justify-center gap-2">
-                  <RefreshCw className="w-4 h-4 animate-spin text-amber-400" />
-                  Synthesizing grounded answer across transcripts...
+                <div className="flex items-center gap-2 p-4 text-xs text-ink-muted">
+                  <div className="flex items-center gap-1">
+                    {[0, 1, 2].map((i) => (
+                      <div
+                        key={i}
+                        className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-bounce-dot"
+                        style={{ animationDelay: `${i * 0.15}s` }}
+                      />
+                    ))}
+                  </div>
+                  Synthesizing answer across transcripts...
                 </div>
               ) : response ? (
                 <motion.div
