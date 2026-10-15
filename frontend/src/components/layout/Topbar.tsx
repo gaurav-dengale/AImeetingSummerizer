@@ -34,7 +34,6 @@ export default function Topbar({ status, statusError, onOpenTour, onToggleMobile
           )}
           <div className="min-w-0">
             <h1 className="text-base sm:text-lg font-bold leading-none truncate">VexaMeet AI Assistant</h1>
-            <p className="text-ink-muted text-[10px] sm:text-xs mt-0.5 truncate">Spring Boot :8080 &middot; FastAPI AI engine :5001</p>
           </div>
         </div>
 
