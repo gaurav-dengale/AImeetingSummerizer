@@ -215,8 +215,8 @@ export default function Sidebar({
             <Mic className="w-4 h-4 text-white" strokeWidth={2.4} />
           </div>
           {!collapsed && (
-            <span className="font-extrabold text-sm tracking-tight whitespace-nowrap overflow-hidden">
-              MeetAI
+            <span className="font-extrabold text-sm tracking-tight whitespace-nowrap overflow-hidden text-white">
+              Meet<span className="text-primary">AI</span>
             </span>
           )}
         </div>
@@ -255,7 +255,9 @@ export default function Sidebar({
                   <div className="w-8 h-8 rounded-lg bg-brand-gradient flex items-center justify-center shrink-0">
                     <Mic className="w-4 h-4 text-white" strokeWidth={2.4} />
                   </div>
-                  <span className="font-extrabold text-sm tracking-tight">MeetAI</span>
+                  <span className="font-extrabold text-sm tracking-tight text-white">
+                    Meet<span className="text-primary">AI</span>
+                  </span>
                 </div>
                 <button
                   onClick={onCloseMobile}
