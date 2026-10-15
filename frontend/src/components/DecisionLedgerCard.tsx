@@ -76,7 +76,7 @@ export default function DecisionLedgerCard({ currentMeetingDecisions }: Props) {
   const generateAdrMarkdown = () => {
     const lines = [
       "# Architecture & Corporate Decision Records (ADR)",
-      `*Generated on ${new Date().toLocaleDateString()} via VexaMeet Cryptographic Consensus Engine*`,
+      `*Generated on ${new Date().toLocaleDateString()} via MeetAI Cryptographic Consensus Engine*`,
       "",
     ];
 

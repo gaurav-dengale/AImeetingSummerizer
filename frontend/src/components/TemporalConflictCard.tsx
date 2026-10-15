@@ -210,7 +210,7 @@ export default function TemporalConflictCard() {
                     <button
                       onClick={() => handleResolve(c)}
                       disabled={resolvingId === c.conflictId}
-                      className="shrink-0 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-black font-semibold text-xs transition-all shadow-md shadow-amber-500/20"
+                      className="shrink-0 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs transition-all shadow-md shadow-amber-500/20"
                     >
                       {resolvingId === c.conflictId ? (
                         <RefreshCw className="w-3.5 h-3.5 animate-spin" />

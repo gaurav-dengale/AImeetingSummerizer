@@ -216,7 +216,7 @@ export default function Sidebar({
           </div>
           {!collapsed && (
             <span className="font-extrabold text-sm tracking-tight whitespace-nowrap overflow-hidden">
-              VexaMeet
+              MeetAI
             </span>
           )}
         </div>
@@ -255,7 +255,7 @@ export default function Sidebar({
                   <div className="w-8 h-8 rounded-lg bg-brand-gradient flex items-center justify-center shrink-0">
                     <Mic className="w-4 h-4 text-white" strokeWidth={2.4} />
                   </div>
-                  <span className="font-extrabold text-sm tracking-tight">VexaMeet</span>
+                  <span className="font-extrabold text-sm tracking-tight">MeetAI</span>
                 </div>
                 <button
                   onClick={onCloseMobile}

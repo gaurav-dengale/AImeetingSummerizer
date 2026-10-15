@@ -33,7 +33,7 @@ export default function Topbar({ status, statusError, onOpenTour, onToggleMobile
             </button>
           )}
           <div className="min-w-0">
-            <h1 className="text-base sm:text-lg font-bold leading-none truncate">VexaMeet AI Assistant</h1>
+            <h1 className="text-base sm:text-lg font-bold leading-none truncate">MeetAI</h1>
           </div>
         </div>
 

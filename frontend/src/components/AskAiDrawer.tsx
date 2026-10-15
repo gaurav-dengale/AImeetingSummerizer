@@ -233,7 +233,7 @@ export default function AskAiDrawer({ isOpen, onClose, meetingId }: Props) {
                 <button
                   type="submit"
                   disabled={loading || !query.trim()}
-                  className="p-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-black font-semibold transition-colors"
+                  className="p-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-slate-950 font-bold transition-colors"
                 >
                   <Send className="w-4 h-4" />
                 </button>
